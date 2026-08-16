@@ -2,503 +2,839 @@
 
 "use strict";
 
-/* =========================================
-   CONFIGURACIÓN
-========================================= */
+
+/* =========================================================
+   CONFIGURACIÓN PRINCIPAL
+========================================================= */
 
 const CONFIG = {
   whatsapp: "34602487576",
-  productName: "Empanada de pollo",
-  unitPrice: 3.00,
+
+  product: {
+    name: "Empanada de pollo",
+    price: 1.00
+  },
+
+  pickup: {
+    name: "Punto de recogida",
+    location: "Estación de RENFE de Azuqueca de Henares",
+    shipping: 0
+  },
 
   /*
-   * Si posteriormente defines un precio fijo para el domicilio,
-   * cambia este valor.
-   *
-   * Si permanece en null, el pedido indicará:
-   * "Consultar envío".
-   */
-  homeDeliveryPrice: null,
+    Si quieres establecer posteriormente un precio fijo
+    para el domicilio, cambia null por un número.
 
-  pickupLocation: "Estación de RENFE de Azuqueca de Henares"
+    Ejemplo:
+    homeDeliveryShipping: 2.50
+
+    Si permanece en null:
+    el coste se mostrará como "Consultar".
+  */
+  homeDeliveryShipping: null
 };
 
 
-/* =========================================
+/* =========================================================
    ELEMENTOS
-========================================= */
+========================================================= */
 
-const loader = document.getElementById("pageLoader");
-const clockElement = document.getElementById("clock");
-const dateElement = document.getElementById("date");
+const $ = selector =>
+  document.querySelector(selector);
 
-const quantityElement = document.getElementById("quantity");
-const summaryQuantity = document.getElementById("summaryQuantity");
-const subtotalElement = document.getElementById("subtotal");
-const shippingElement = document.getElementById("shipping");
-const totalElement = document.getElementById("total");
-const paypalTotal = document.getElementById("paypalTotal");
+const $$ = selector =>
+  document.querySelectorAll(selector);
 
-const plusBtn = document.getElementById("plusBtn");
-const minusBtn = document.getElementById("minusBtn");
+const loader = $("#pageLoader");
 
-const addressBox = document.getElementById("addressBox");
-const deliveryPriceLabel = document.getElementById("deliveryPriceLabel");
+const clock = $("#clock");
+const date = $("#date");
 
-const paypalWrapper = document.getElementById("paypalWrapper");
-const cashWrapper = document.getElementById("cashWrapper");
+const quantityElement = $("#quantity");
+const plusBtn = $("#plusBtn");
+const minusBtn = $("#minusBtn");
 
-const orderForm = document.getElementById("orderForm");
+const summaryQuantity = $("#summaryQuantity");
+const subtotalElement = $("#subtotal");
+const shippingElement = $("#shipping");
+const totalElement = $("#total");
 
-const menuToggle = document.getElementById("menuToggle");
-const mainNav = document.getElementById("mainNav");
+const paypalTotal = $("#paypalTotal");
+const paypalUnits = $("#paypalUnits");
 
-const toast = document.getElementById("toast");
-const toastText = document.getElementById("toastText");
+const addressPanel = $("#addressPanel");
+const shippingLabel = $("#shippingLabel");
+
+const paypalPanel = $("#paypalPanel");
+const cashPanel = $("#cashPanel");
+
+const orderForm = $("#orderForm");
+
+const menuToggle = $("#menuToggle");
+const mainNav = $("#mainNav");
+
+const toast = $("#toast");
+const toastText = $("#toastText");
 
 
-/* =========================================
+/* =========================================================
    ESTADO
-========================================= */
+========================================================= */
 
 let quantity = 1;
 
 
-/* =========================================
-   UTILIDADES
-========================================= */
+/* =========================================================
+   FORMATO DE DINERO
+========================================================= */
 
-function formatPrice(value) {
+function money(value) {
+
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency: "EUR"
   }).format(value);
+
 }
 
-function escapeText(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
-function showToast(message) {
+/* =========================================================
+   TOAST
+========================================================= */
+
+function notify(message) {
+
   if (!toast || !toastText) return;
 
   toastText.textContent = message;
+
   toast.classList.add("show");
 
-  clearTimeout(showToast.timeout);
+  clearTimeout(notify.timer);
 
-  showToast.timeout = setTimeout(() => {
+  notify.timer = setTimeout(() => {
+
     toast.classList.remove("show");
+
   }, 3500);
+
 }
 
 
-/* =========================================
-   RELOJ Y FECHA EN TIEMPO REAL
-========================================= */
+/* =========================================================
+   RELOJ
+========================================================= */
 
 function updateClock() {
+
   const now = new Date();
 
-  const time = new Intl.DateTimeFormat("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false
-  }).format(now);
+  const currentTime =
+    new Intl.DateTimeFormat("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).format(now);
 
-  const date = new Intl.DateTimeFormat("es-ES", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric"
-  }).format(now);
+  const currentDate =
+    new Intl.DateTimeFormat("es-ES", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    }).format(now);
 
-  if (clockElement) {
-    clockElement.textContent = time;
+  if (clock) {
+
+    clock.textContent =
+      currentTime;
+
   }
 
-  if (dateElement) {
-    dateElement.textContent =
-      date.charAt(0).toUpperCase() + date.slice(1);
+  if (date) {
+
+    date.textContent =
+      currentDate
+        .charAt(0)
+        .toUpperCase()
+      +
+      currentDate.slice(1);
+
   }
+
 }
 
 updateClock();
-setInterval(updateClock, 1000);
+
+setInterval(
+  updateClock,
+  1000
+);
 
 
-/* =========================================
-   FECHA MÍNIMA DEL PEDIDO
-========================================= */
+/* =========================================================
+   FECHA MÍNIMA
+========================================================= */
 
-const dateInput = document.getElementById("dateInput");
+const orderDate = $("#orderDate");
 
-if (dateInput) {
+if (orderDate) {
+
   const today = new Date();
 
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
+  const yyyy =
+    today.getFullYear();
 
-  const todayString = `${year}-${month}-${day}`;
+  const mm =
+    String(
+      today.getMonth() + 1
+    ).padStart(2, "0");
 
-  dateInput.min = todayString;
-  dateInput.value = todayString;
+  const dd =
+    String(
+      today.getDate()
+    ).padStart(2, "0");
+
+  const todayString =
+    `${yyyy}-${mm}-${dd}`;
+
+  orderDate.min =
+    todayString;
+
+  orderDate.value =
+    todayString;
+
 }
 
 
-/* =========================================
+/* =========================================================
    HORA POR DEFECTO
-========================================= */
+========================================================= */
 
-const timeInput = document.getElementById("timeInput");
+const orderTime = $("#orderTime");
 
-if (timeInput) {
+if (orderTime) {
+
   const now = new Date();
 
-  let hours = now.getHours();
-  let minutes = now.getMinutes();
+  let hour =
+    now.getHours();
 
-  minutes = Math.ceil(minutes / 15) * 15;
+  let minute =
+    now.getMinutes();
 
-  if (minutes >= 60) {
-    hours += 1;
-    minutes = 0;
+  minute =
+    Math.ceil(minute / 15) * 15;
+
+  if (minute >= 60) {
+
+    minute = 0;
+    hour++;
+
   }
 
-  if (hours > 23) {
-    hours = 23;
-    minutes = 45;
+  if (hour > 23) {
+
+    hour = 23;
+    minute = 45;
+
   }
 
-  timeInput.value =
-    `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  orderTime.value =
+    `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
 }
 
 
-/* =========================================
-   CÁLCULO DEL PEDIDO
-========================================= */
+/* =========================================================
+   ENTREGA SELECCIONADA
+========================================================= */
 
 function getDelivery() {
-  const selected = document.querySelector(
-    'input[name="delivery"]:checked'
-  );
 
-  return selected ? selected.value : "pickup";
+  return $(
+    'input[name="delivery"]:checked'
+  )?.value || "pickup";
+
 }
 
-function getShippingCost() {
-  const delivery = getDelivery();
+
+/* =========================================================
+   PAGO SELECCIONADO
+========================================================= */
+
+function getPayment() {
+
+  return $(
+    'input[name="payment"]:checked'
+  )?.value || "paypal";
+
+}
+
+
+/* =========================================================
+   COSTE DE ENVÍO
+========================================================= */
+
+function getShipping() {
+
+  const delivery =
+    getDelivery();
 
   if (delivery === "pickup") {
+
     return 0;
+
   }
 
-  if (typeof CONFIG.homeDeliveryPrice === "number") {
-    return CONFIG.homeDeliveryPrice;
-  }
+  return CONFIG.homeDeliveryShipping;
 
-  return null;
 }
 
-function calculateOrder() {
-  const subtotal = quantity * CONFIG.unitPrice;
-  const shipping = getShippingCost();
 
-  const total = shipping === null
-    ? subtotal
-    : subtotal + shipping;
+/* =========================================================
+   CALCULAR PEDIDO
+========================================================= */
+
+function calculateOrder() {
+
+  const subtotal =
+    quantity *
+    CONFIG.product.price;
+
+  const shipping =
+    getShipping();
+
+  const total =
+    shipping === null
+      ? null
+      : subtotal + shipping;
 
   return {
+    quantity,
     subtotal,
     shipping,
     total
   };
+
 }
 
-function updateOrderSummary() {
-  const order = calculateOrder();
 
-  quantityElement.textContent = quantity;
+/* =========================================================
+   ACTUALIZAR RESUMEN
+========================================================= */
 
-  summaryQuantity.textContent =
-    `${quantity} × ${formatPrice(CONFIG.unitPrice)}`;
+function updateSummary() {
 
-  subtotalElement.textContent =
-    formatPrice(order.subtotal);
+  const order =
+    calculateOrder();
+
+  if (quantityElement) {
+
+    quantityElement.textContent =
+      quantity;
+
+  }
+
+  if (summaryQuantity) {
+
+    summaryQuantity.textContent =
+      `${quantity} × ${money(CONFIG.product.price)}`;
+
+  }
+
+  if (subtotalElement) {
+
+    subtotalElement.textContent =
+      money(order.subtotal);
+
+  }
 
   if (order.shipping === null) {
-    shippingElement.textContent = "Consultar";
-    totalElement.textContent = formatPrice(order.subtotal) + " + envío";
-  } else {
+
     shippingElement.textContent =
-      formatPrice(order.shipping);
+      "Consultar";
 
     totalElement.textContent =
-      formatPrice(order.total);
+      `${money(order.subtotal)} + envío`;
+
+  } else {
+
+    shippingElement.textContent =
+      money(order.shipping);
+
+    totalElement.textContent =
+      money(order.total);
+
   }
 
   if (paypalTotal) {
+
     paypalTotal.textContent =
-      order.shipping === null
-        ? `${formatPrice(order.subtotal)} + envío`
-        : formatPrice(order.total);
+      order.total === null
+        ? `${money(order.subtotal)} + envío`
+        : money(order.total);
+
   }
+
+  if (paypalUnits) {
+
+    paypalUnits.textContent =
+      quantity === 1
+        ? "1 unidad"
+        : `${quantity} unidades`;
+
+  }
+
 }
 
 
-/* =========================================
+/* =========================================================
    CANTIDAD
-========================================= */
+========================================================= */
 
 function setQuantity(value) {
-  quantity = Math.max(1, Math.min(99, Number(value) || 1));
 
-  updateOrderSummary();
+  const parsed =
+    Number(value);
 
-  document.querySelectorAll("[data-qty]").forEach(button => {
-    button.classList.toggle(
+  if (!Number.isFinite(parsed)) {
+
+    quantity = 1;
+
+  } else {
+
+    quantity =
+      Math.max(
+        1,
+        Math.min(
+          99,
+          Math.round(parsed)
+        )
+      );
+
+  }
+
+  updateSummary();
+
+  $$(".offer-card").forEach(card => {
+
+    card.classList.toggle(
       "active",
-      Number(button.dataset.qty) === quantity
+      Number(card.dataset.qty) === quantity
     );
+
   });
+
 }
 
-plusBtn?.addEventListener("click", () => {
-  setQuantity(quantity + 1);
-});
 
-minusBtn?.addEventListener("click", () => {
-  setQuantity(quantity - 1);
-});
+/* =========================================================
+   BOTONES + / -
+========================================================= */
 
-document.querySelectorAll("[data-qty]").forEach(button => {
-  button.addEventListener("click", () => {
-    setQuantity(button.dataset.qty);
-  });
-});
+plusBtn?.addEventListener(
+  "click",
+  () => {
+
+    setQuantity(
+      quantity + 1
+    );
+
+  }
+);
 
 
-/* =========================================
+minusBtn?.addEventListener(
+  "click",
+  () => {
+
+    setQuantity(
+      quantity - 1
+    );
+
+  }
+);
+
+
+/* =========================================================
+   OFERTAS / PACKS
+========================================================= */
+
+$$(".offer-card").forEach(
+  card => {
+
+    card.addEventListener(
+      "click",
+      () => {
+
+        const qty =
+          Number(
+            card.dataset.qty
+          );
+
+        setQuantity(qty);
+
+        notify(
+          `Pack de ${qty} seleccionado.`
+        );
+
+      }
+    );
+
+  }
+);
+
+
+/* =========================================================
    ENTREGA
-========================================= */
+========================================================= */
 
-function updateDeliveryUI() {
-  const delivery = getDelivery();
+function updateDelivery() {
+
+  const delivery =
+    getDelivery();
 
   if (delivery === "home") {
-    addressBox?.classList.remove("hidden");
 
-    if (CONFIG.homeDeliveryPrice === null) {
-      deliveryPriceLabel.textContent = "Consultar";
+    addressPanel?.classList.remove(
+      "hidden"
+    );
+
+    if (
+      CONFIG.homeDeliveryShipping === null
+    ) {
+
+      shippingLabel.textContent =
+        "CONSULTAR";
+
     } else {
-      deliveryPriceLabel.textContent =
-        formatPrice(CONFIG.homeDeliveryPrice);
+
+      shippingLabel.textContent =
+        money(
+          CONFIG.homeDeliveryShipping
+        );
+
     }
+
   } else {
-    addressBox?.classList.add("hidden");
-    deliveryPriceLabel.textContent = "GRATIS";
+
+    addressPanel?.classList.add(
+      "hidden"
+    );
+
+    shippingLabel.textContent =
+      "GRATIS";
+
   }
 
-  updateOrderSummary();
+  updateSummary();
+
 }
 
-document.querySelectorAll('input[name="delivery"]').forEach(input => {
-  input.addEventListener("change", updateDeliveryUI);
-});
+
+$$('input[name="delivery"]')
+  .forEach(input => {
+
+    input.addEventListener(
+      "change",
+      updateDelivery
+    );
+
+  });
 
 
-/* =========================================
+/* =========================================================
    MÉTODO DE PAGO
-========================================= */
+========================================================= */
 
-function updatePaymentUI() {
-  const payment = document.querySelector(
-    'input[name="payment"]:checked'
-  )?.value;
+function updatePayment() {
+
+  const payment =
+    getPayment();
 
   if (payment === "paypal") {
-    paypalWrapper?.classList.remove("hidden");
-    cashWrapper?.classList.add("hidden");
+
+    paypalPanel?.classList.remove(
+      "hidden"
+    );
+
+    cashPanel?.classList.add(
+      "hidden"
+    );
+
   } else {
-    paypalWrapper?.classList.add("hidden");
-    cashWrapper?.classList.remove("hidden");
+
+    paypalPanel?.classList.add(
+      "hidden"
+    );
+
+    cashPanel?.classList.remove(
+      "hidden"
+    );
+
   }
+
 }
 
-document.querySelectorAll('input[name="payment"]').forEach(input => {
-  input.addEventListener("change", updatePaymentUI);
-});
 
+$$('input[name="payment"]')
+  .forEach(input => {
 
-/* =========================================
-   MENÚ MÓVIL
-========================================= */
+    input.addEventListener(
+      "change",
+      updatePayment
+    );
 
-menuToggle?.addEventListener("click", () => {
-  mainNav?.classList.toggle("open");
-});
-
-document.querySelectorAll(".main-nav a").forEach(link => {
-  link.addEventListener("click", () => {
-    mainNav?.classList.remove("open");
   });
-});
 
 
-/* =========================================
+/* =========================================================
+   MENÚ MÓVIL
+========================================================= */
+
+menuToggle?.addEventListener(
+  "click",
+  () => {
+
+    mainNav?.classList.toggle(
+      "open"
+    );
+
+  }
+);
+
+
+$$(".main-nav a").forEach(
+  link => {
+
+    link.addEventListener(
+      "click",
+      () => {
+
+        mainNav?.classList.remove(
+          "open"
+        );
+
+      }
+    );
+
+  }
+);
+
+
+/* =========================================================
    ANIMACIONES DE ENTRADA
-========================================= */
+========================================================= */
 
-function initRevealAnimations() {
-  const elements = document.querySelectorAll(".reveal");
+function initReveal() {
 
-  if (!("IntersectionObserver" in window)) {
-    elements.forEach(element => {
-      element.classList.add("visible");
-    });
+  const elements =
+    $$(".reveal");
+
+  if (
+    !("IntersectionObserver" in window)
+  ) {
+
+    elements.forEach(
+      element =>
+        element.classList.add(
+          "visible"
+        )
+    );
+
     return;
   }
 
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    {
-      threshold: 0.12,
-      rootMargin: "0px 0px -40px 0px"
-    }
+  const observer =
+    new IntersectionObserver(
+      entries => {
+
+        entries.forEach(
+          entry => {
+
+            if (
+              entry.isIntersecting
+            ) {
+
+              entry.target.classList.add(
+                "visible"
+              );
+
+              observer.unobserve(
+                entry.target
+              );
+
+            }
+
+          }
+        );
+
+      },
+      {
+        threshold: .12,
+        rootMargin:
+          "0px 0px -40px 0px"
+      }
+    );
+
+  elements.forEach(
+    element =>
+      observer.observe(element)
   );
 
-  elements.forEach(element => {
-    observer.observe(element);
-  });
 }
 
-initRevealAnimations();
+initReveal();
 
 
-/* =========================================
+/* =========================================================
    LOADER
-========================================= */
+========================================================= */
 
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    loader?.classList.add("loaded");
-  }, 700);
-});
+window.addEventListener(
+  "load",
+  () => {
 
+    setTimeout(
+      () => {
 
-/* =========================================
-   EFECTO DE LUZ DEL CURSOR
-========================================= */
+        loader?.classList.add(
+          "loaded"
+        );
 
-const cursorGlow = document.querySelector(".cursor-glow");
+      },
+      650
+    );
 
-if (cursorGlow && window.matchMedia("(pointer:fine)").matches) {
-  document.addEventListener("pointermove", event => {
-    cursorGlow.style.left = `${event.clientX}px`;
-    cursorGlow.style.top = `${event.clientY}px`;
-  });
-}
+  }
+);
 
 
-/* =========================================
-   VALIDACIÓN
-========================================= */
+/* =========================================================
+   VALIDAR DIRECCIÓN
+========================================================= */
 
-function validateDeliveryData() {
-  const delivery = getDelivery();
+function validateAddress() {
 
-  if (delivery !== "home") {
+  if (
+    getDelivery() !== "home"
+  ) {
+
     return true;
+
   }
 
-  const address = document.getElementById("address")?.value.trim();
-  const city = document.getElementById("city")?.value.trim();
-  const postal = document.getElementById("postal")?.value.trim();
+  const address =
+    $("#address")?.value.trim();
 
-  if (!address || !city || !postal) {
-    showToast("Completa la dirección de entrega.");
-    document.getElementById("address")?.focus();
+  const city =
+    $("#city")?.value.trim();
+
+  const postal =
+    $("#postal")?.value.trim();
+
+  if (
+    !address ||
+    !city ||
+    !postal
+  ) {
+
+    notify(
+      "Completa todos los datos de entrega."
+    );
+
+    $("#address")?.focus();
+
     return false;
+
   }
 
   return true;
+
 }
 
 
-/* =========================================
-   GENERAR PEDIDO PARA WHATSAPP
-========================================= */
+/* =========================================================
+   TEXTO DE ENTREGA
+========================================================= */
 
-function buildWhatsAppMessage() {
-  const name =
-    document.getElementById("name")?.value.trim() || "";
+function buildDeliveryText(order) {
 
-  const phone =
-    document.getElementById("phone")?.value.trim() || "";
+  if (
+    getDelivery() === "pickup"
+  ) {
 
-  const orderDate =
-    document.getElementById("dateInput")?.value || "";
+    return (
+      `📦 *Entrega:* Punto de recogida\n` +
+      `🚉 *Lugar:* ${CONFIG.pickup.location}\n` +
+      `💶 *Gasto de envío:* 0,00 €`
+    );
 
-  const orderTime =
-    document.getElementById("timeInput")?.value || "";
-
-  const message =
-    document.getElementById("message")?.value.trim() || "Sin observaciones";
-
-  const delivery = getDelivery();
-
-  const payment =
-    document.querySelector(
-      'input[name="payment"]:checked'
-    )?.value || "paypal";
-
-  const order = calculateOrder();
+  }
 
   const address =
-    document.getElementById("address")?.value.trim() || "";
+    $("#address")?.value.trim() || "";
 
   const city =
-    document.getElementById("city")?.value.trim() || "";
+    $("#city")?.value.trim() || "";
 
   const postal =
-    document.getElementById("postal")?.value.trim() || "";
+    $("#postal")?.value.trim() || "";
 
-  let deliveryText = "";
+  let text =
+    `📦 *Entrega:* A domicilio\n` +
+    `📍 *Dirección:* ${address}\n` +
+    `🏙️ *Localidad:* ${city}\n` +
+    `📮 *Código postal:* ${postal}\n`;
 
-  if (delivery === "pickup") {
-    deliveryText =
-      `🚉 *Punto de recogida:* ${CONFIG.pickupLocation}\n` +
-      `💶 *Gasto de envío:* 0,00 €`;
+  if (
+    order.shipping === null
+  ) {
+
+    text +=
+      `💶 *Gasto de envío:* Por confirmar`;
+
   } else {
-    deliveryText =
-      `🏠 *Entrega:* A domicilio\n` +
-      `📍 *Dirección:* ${address}\n` +
-      `🏙️ *Localidad:* ${city}\n` +
-      `📮 *Código postal:* ${postal}\n`;
 
-    if (order.shipping === null) {
-      deliveryText +=
-        `💶 *Gasto de envío:* Por confirmar`;
-    } else {
-      deliveryText +=
-        `💶 *Gasto de envío:* ${formatPrice(order.shipping)}`;
-    }
+    text +=
+      `💶 *Gasto de envío:* ${money(order.shipping)}`;
+
   }
+
+  return text;
+
+}
+
+
+/* =========================================================
+   CONSTRUIR PEDIDO WHATSAPP
+========================================================= */
+
+function buildWhatsAppMessage() {
+
+  const name =
+    $("#name")?.value.trim() || "";
+
+  const phone =
+    $("#phone")?.value.trim() || "";
+
+  const date =
+    $("#orderDate")?.value || "";
+
+  const time =
+    $("#orderTime")?.value || "";
+
+  const message =
+    $("#message")?.value.trim()
+    || "Sin observaciones";
+
+  const payment =
+    getPayment();
+
+  const order =
+    calculateOrder();
 
   const paymentText =
     payment === "paypal"
@@ -506,121 +842,174 @@ function buildWhatsAppMessage() {
       : "Metálico";
 
   const totalText =
-    order.shipping === null
-      ? `${formatPrice(order.subtotal)} + envío`
-      : formatPrice(order.total);
+    order.total === null
+      ? `${money(order.subtotal)} + envío`
+      : money(order.total);
 
   return (
     `🥟 *NUEVO PEDIDO DE EMPANADAS*\n\n` +
 
     `👤 *Nombre:* ${name}\n` +
+
     `📞 *Teléfono:* ${phone}\n` +
-    `🥟 *Producto:* ${CONFIG.productName}\n` +
+
+    `🥟 *Producto:* ${CONFIG.product.name}\n` +
+
     `🥟 *Cantidad:* ${quantity}\n` +
-    `💶 *Subtotal:* ${formatPrice(order.subtotal)}\n` +
+
+    `💶 *Precio unidad:* ${money(CONFIG.product.price)}\n` +
+
+    `💶 *Subtotal:* ${money(order.subtotal)}\n` +
+
     `💶 *Total:* ${totalText}\n\n` +
 
-    `${deliveryText}\n\n` +
+    `${buildDeliveryText(order)}\n\n` +
 
-    `📅 *Fecha:* ${orderDate}\n` +
-    `⏰ *Hora preferida:* ${orderTime}\n` +
+    `📅 *Fecha:* ${date}\n` +
+
+    `⏰ *Hora:* ${time}\n` +
+
     `💳 *Método de pago:* ${paymentText}\n` +
+
     `📝 *Mensaje:* ${message}\n\n` +
 
     `¡Hola! Me gustaría confirmar la disponibilidad de mi pedido.`
   );
+
 }
 
 
-/* =========================================
-   ENVÍO A WHATSAPP
-========================================= */
+/* =========================================================
+   ENVIAR PEDIDO A WHATSAPP
+========================================================= */
 
-orderForm?.addEventListener("submit", event => {
-  event.preventDefault();
+orderForm?.addEventListener(
+  "submit",
+  event => {
 
-  if (!orderForm.checkValidity()) {
-    orderForm.reportValidity();
-    showToast("Completa los campos obligatorios.");
-    return;
-  }
+    event.preventDefault();
 
-  if (!validateDeliveryData()) {
-    return;
-  }
+    if (
+      !orderForm.checkValidity()
+    ) {
 
-  const message = buildWhatsAppMessage();
+      orderForm.reportValidity();
 
-  const whatsappURL =
-    `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`;
+      notify(
+        "Completa los campos obligatorios."
+      );
 
-  showToast("Abriendo WhatsApp con tu pedido...");
+      return;
 
-  setTimeout(() => {
-    window.open(
-      whatsappURL,
-      "_blank",
-      "noopener,noreferrer"
+    }
+
+    if (
+      !validateAddress()
+    ) {
+
+      return;
+
+    }
+
+    const message =
+      buildWhatsAppMessage();
+
+    const whatsappUrl =
+      `https://wa.me/${CONFIG.whatsapp}` +
+      `?text=${encodeURIComponent(message)}`;
+
+    notify(
+      "Abriendo WhatsApp con tu pedido..."
     );
-  }, 500);
-});
+
+    setTimeout(
+      () => {
+
+        window.open(
+          whatsappUrl,
+          "_blank",
+          "noopener,noreferrer"
+        );
+
+      },
+      450
+    );
+
+  }
+);
 
 
-/* =========================================
-   ABRIR WHATSAPP DIRECTAMENTE
-========================================= */
-
-document.querySelectorAll('a[href*="wa.me"]').forEach(link => {
-  link.addEventListener("click", () => {
-    link.style.transform = "scale(.98)";
-
-    setTimeout(() => {
-      link.style.transform = "";
-    }, 180);
-  });
-});
-
-
-/* =========================================
-   ACTUALIZACIÓN INICIAL
-========================================= */
-
-setQuantity(1);
-updateDeliveryUI();
-updatePaymentUI();
-
-
-/* =========================================
-   PARALLAX SUAVE
-========================================= */
+/* =========================================================
+   EFECTO INTERACTIVO DEL RATÓN
+========================================================= */
 
 if (
-  window.matchMedia("(pointer:fine)").matches &&
-  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  window.matchMedia(
+    "(pointer:fine)"
+  ).matches &&
+  !window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches
 ) {
-  const heroProduct = document.querySelector(".hero-product");
 
-  document.addEventListener("pointermove", event => {
-    if (!heroProduct) return;
+  const heroArt =
+    document.querySelector(
+      ".hero-art"
+    );
 
-    const x =
-      (event.clientX / window.innerWidth - 0.5) * 8;
+  document.addEventListener(
+    "pointermove",
+    event => {
 
-    const y =
-      (event.clientY / window.innerHeight - 0.5) * 8;
+      if (!heroArt) return;
 
-    heroProduct.style.transform =
-      `translate(${x}px, ${y}px)`;
-  });
+      const x =
+        (event.clientX /
+          window.innerWidth -
+          .5) * 8;
+
+      const y =
+        (event.clientY /
+          window.innerHeight -
+          .5) * 8;
+
+      heroArt.style.transform =
+        `translate(${x}px, ${y}px)`;
+
+    }
+  );
+
 }
 
 
-/* =========================================
-   TECLADO: ESC CIERRA MENÚ
-========================================= */
+/* =========================================================
+   ESCAPE
+========================================================= */
 
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    mainNav?.classList.remove("open");
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      mainNav?.classList.remove(
+        "open"
+      );
+
+    }
+
   }
-});
+);
+
+
+/* =========================================================
+   INICIALIZACIÓN
+========================================================= */
+
+setQuantity(1);
+
+updateDelivery();
+
+updatePayment();

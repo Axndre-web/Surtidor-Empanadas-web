@@ -4,13 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#08050d">
-  <meta name="description" content="Invitación digital y pedidos de empanadas de pollo.">
-  <title>EMPANADAS • Pedido Digital</title>
+  <meta name="theme-color" content="#050308">
+  <meta name="description" content="Pedidos de empanadas de pollo en Azuqueca de Henares.">
+  <title>EMPANADAS · Pedido Digital</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -18,24 +18,22 @@
 <body>
 
   <div class="page-loader" id="pageLoader">
-    <div class="loader-ring"></div>
-    <span>INICIANDO EXPERIENCIA</span>
+    <div class="loader-core">
+      <span></span>
+    </div>
+    <p>INICIANDO PEDIDO DIGITAL</p>
   </div>
 
-  <div class="cursor-glow"></div>
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+  <div class="grid-overlay"></div>
   <div class="noise"></div>
 
   <header class="topbar">
     <a href="#inicio" class="brand">
-      <span class="brand-symbol">🥟</span>
-      <span>EMPANADAS<span class="brand-dot">.</span></span>
+      <span class="brand-icon">🥟</span>
+      <span>EMPANADAS<span class="green">.</span></span>
     </a>
-
-    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
 
     <nav class="main-nav" id="mainNav">
       <a href="#inicio">Inicio</a>
@@ -44,235 +42,333 @@
       <a href="#contacto">Contacto</a>
     </nav>
 
-    <div class="status-pill">
-      <span class="status-light"></span>
+    <div class="top-status">
+      <span class="online-dot"></span>
       <span>ABIERTO</span>
     </div>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </header>
+
 
   <main>
 
     <!-- HERO -->
     <section class="hero section" id="inicio">
-      <div class="hero-grid"></div>
 
-      <div class="floating-orb orb-one"></div>
-      <div class="floating-orb orb-two"></div>
-      <div class="floating-orb orb-three"></div>
-
-      <div class="hero-content reveal">
+      <div class="hero-copy reveal">
         <div class="eyebrow">
           <span></span>
-          PEDIDOS DIGITALES
+          PEDIDOS ONLINE · AZUQUECA DE HENARES
         </div>
 
         <h1>
           EMPANADAS
-          <strong>DE POLLO</strong>
+          <span>DE POLLO</span>
         </h1>
 
-        <p class="hero-text">
-          Sabor casero, pedido sencillo y confirmación directa por WhatsApp.
+        <p>
+          Empanadas preparadas para ti. Elige cantidad,
+          modalidad de entrega y forma de pago.
         </p>
 
-        <div class="hero-actions">
-          <a href="#pedido" class="btn btn-primary">
-            <span>HACER PEDIDO</span>
+        <div class="hero-buttons">
+          <a href="#pedido" class="neon-button primary">
+            HACER PEDIDO
             <b>→</b>
           </a>
 
-          <a href="#pago" class="btn btn-secondary">
-            VER FORMAS DE PAGO
+          <a href="#pago" class="neon-button secondary">
+            VER PAGO
           </a>
         </div>
 
-        <div class="live-info">
-          <div class="live-status">
-            <span class="pulse-dot"></span>
-            <span>Servicio disponible</span>
+        <div class="live-panel">
+
+          <div class="live-service">
+            <span class="online-dot"></span>
+            <div>
+              <small>SERVICIO</small>
+              <strong>ONLINE</strong>
+            </div>
           </div>
 
-          <div class="clock" id="clock">--:--:--</div>
-          <div class="date" id="date">--/--/----</div>
+          <div class="live-time">
+            <small>HORA ACTUAL</small>
+            <strong id="clock">00:00:00</strong>
+          </div>
+
+          <div class="live-date">
+            <small>FECHA</small>
+            <strong id="date">--/--/----</strong>
+          </div>
+
         </div>
       </div>
 
-      <div class="hero-product reveal reveal-delay">
-        <div class="product-halo"></div>
 
-        <div class="empanada-visual">
-          <div class="empanada-shadow"></div>
+      <div class="hero-art reveal delay-1">
+
+        <div class="neon-orbit orbit-1"></div>
+        <div class="neon-orbit orbit-2"></div>
+        <div class="neon-orbit orbit-3"></div>
+
+        <div class="empanada">
+          <div class="empanada-glow"></div>
+
           <div class="empanada-body">
-            <span class="crimp c1"></span>
-            <span class="crimp c2"></span>
-            <span class="crimp c3"></span>
-            <span class="crimp c4"></span>
-            <span class="crimp c5"></span>
-            <span class="crimp c6"></span>
+            <i class="fold fold-1"></i>
+            <i class="fold fold-2"></i>
+            <i class="fold fold-3"></i>
+            <i class="fold fold-4"></i>
+            <i class="fold fold-5"></i>
+            <i class="fold fold-6"></i>
           </div>
-          <div class="empanada-highlight"></div>
         </div>
 
-        <div class="floating-tag tag-one">
-          <span>✦</span>
-          CASERO
+        <div class="floating-chip chip-1">
+          <span>€</span>
+          <div>
+            <small>PRECIO</small>
+            <strong>1,00 €</strong>
+          </div>
         </div>
 
-        <div class="floating-tag tag-two">
+        <div class="floating-chip chip-2">
           <span>✓</span>
-          PEDIDO FÁCIL
+          <div>
+            <small>ESTADO</small>
+            <strong>DISPONIBLE</strong>
+          </div>
         </div>
+
       </div>
+
     </section>
 
+
     <!-- SERVICIO -->
-    <section class="services section" id="servicios">
+    <section class="section service-section">
+
       <div class="section-heading reveal">
-        <span class="section-number">01 / SERVICIO</span>
-        <h2>ELIGE CÓMO <span>RECIBIRLO</span></h2>
-        <p>Selecciona la modalidad que mejor se adapte a ti.</p>
+        <span class="section-index">01 / ENTREGA</span>
+        <h2>ELIGE TU <span>MODALIDAD</span></h2>
+        <p>Recogida gratuita o entrega a domicilio.</p>
       </div>
 
       <div class="service-grid">
 
         <article class="service-card reveal">
-          <div class="service-icon">🏠</div>
-          <div>
-            <span class="card-label">ENTREGA</span>
-            <h3>A domicilio</h3>
-            <p>Recibe tu pedido cómodamente en la dirección que nos indiques.</p>
-          </div>
-          <div class="card-arrow">↗</div>
-        </article>
-
-        <article class="service-card featured reveal reveal-delay">
+          <div class="service-number">01</div>
           <div class="service-icon">🚉</div>
-          <div>
-            <span class="card-label">GRATIS</span>
-            <h3>Punto de recogida</h3>
-            <p>Estación de RENFE de Azuqueca de Henares. Sin gasto de envío.</p>
-          </div>
-          <div class="card-arrow">↗</div>
+          <span class="service-label green">SIN CARGO</span>
+          <h3>Recogida</h3>
+          <p>
+            Estación de RENFE de Azuqueca de Henares.
+            Punto de recogida sin gastos de envío.
+          </p>
+          <span class="service-arrow">↗</span>
         </article>
 
-        <article class="service-card reveal reveal-delay-2">
+        <article class="service-card reveal delay-1">
+          <div class="service-number">02</div>
+          <div class="service-icon">🏠</div>
+          <span class="service-label">ENTREGA</span>
+          <h3>A domicilio</h3>
+          <p>
+            Indica tu dirección y teléfono de contacto.
+            El coste de envío se añadirá únicamente cuando corresponda.
+          </p>
+          <span class="service-arrow">↗</span>
+        </article>
+
+        <article class="service-card reveal delay-2">
+          <div class="service-number">03</div>
           <div class="service-icon">⚡</div>
-          <div>
-            <span class="card-label">CONFIRMACIÓN</span>
-            <h3>WhatsApp</h3>
-            <p>Tu pedido se prepara una vez confirmados los detalles y el pago.</p>
-          </div>
-          <div class="card-arrow">↗</div>
+          <span class="service-label green">DIRECTO</span>
+          <h3>WhatsApp</h3>
+          <p>
+            Recibe la confirmación de tu pedido directamente
+            en el número de WhatsApp.
+          </p>
+          <span class="service-arrow">↗</span>
         </article>
 
       </div>
     </section>
 
+
     <!-- PEDIDO -->
-    <section class="order-section section" id="pedido">
-      <div class="section-heading reveal">
-        <span class="section-number">02 / TU PEDIDO</span>
+    <section class="section order-section" id="pedido">
+
+      <div class="section-heading centered reveal">
+        <span class="section-index">02 / PEDIDO</span>
         <h2>CREA TU <span>ORDEN</span></h2>
-        <p>Selecciona la cantidad y completa los datos de entrega.</p>
+        <p>Selecciona las unidades que deseas comprar.</p>
       </div>
 
       <div class="order-layout">
 
-        <div class="products-panel glass reveal">
+        <div class="order-card glass reveal">
 
-          <div class="panel-header">
+          <div class="card-top">
             <div>
               <span class="card-label">PRODUCTO</span>
-              <h3>Empanadas de pollo</h3>
+              <h3>Empanada de pollo</h3>
+              <p>Precio por unidad</p>
             </div>
-            <span class="product-status">DISPONIBLE</span>
+
+            <div class="unit-price">
+              <strong>1,00 €</strong>
+              <small>POR UNIDAD</small>
+            </div>
           </div>
 
-          <div class="product-item">
-            <div class="product-mini">
-              <span>🥟</span>
-            </div>
 
-            <div class="product-info">
+          <div class="product-line">
+
+            <div class="product-icon">🥟</div>
+
+            <div class="product-description">
               <h4>Empanada de pollo</h4>
-              <p>Unidad · preparada con dedicación</p>
-              <strong id="unitPrice">3,00 €</strong>
+              <p>Unidad · 1,00 €</p>
             </div>
 
             <div class="quantity-control">
-              <button type="button" id="minusBtn" aria-label="Restar">−</button>
-              <span id="quantity">1</span>
-              <button type="button" id="plusBtn" aria-label="Sumar">+</button>
+              <button type="button" id="minusBtn">−</button>
+              <strong id="quantity">1</strong>
+              <button type="button" id="plusBtn">+</button>
             </div>
+
           </div>
 
-          <div class="quick-quantity">
-            <span>Cantidad rápida</span>
-            <button type="button" data-qty="3">3</button>
-            <button type="button" data-qty="6">6</button>
-            <button type="button" data-qty="12">12</button>
+
+          <div class="offers">
+
+            <div class="offers-title">
+              <span>OFERTAS</span>
+              <small>AHORRA EN TU PEDIDO</small>
+            </div>
+
+            <button type="button" class="offer-card" data-qty="6">
+              <span class="offer-icon">🥟</span>
+              <span>
+                <strong>Pack 6</strong>
+                <small>6 empanadas</small>
+              </span>
+              <b>6,00 €</b>
+            </button>
+
+            <button type="button" class="offer-card" data-qty="12">
+              <span class="offer-icon">🥟</span>
+              <span>
+                <strong>Pack 12</strong>
+                <small>12 empanadas</small>
+              </span>
+              <b>12,00 €</b>
+            </button>
+
           </div>
 
-          <div class="delivery-choice">
-            <label class="choice-title">MODALIDAD DE ENTREGA</label>
 
-            <label class="radio-card">
+          <div class="delivery-selector">
+
+            <span class="card-label">FORMA DE ENTREGA</span>
+
+            <label class="delivery-option">
               <input type="radio" name="delivery" value="pickup" checked>
-              <span class="radio-custom"></span>
-              <span class="radio-content">
+
+              <span class="custom-radio"></span>
+
+              <span class="delivery-text">
                 <strong>🚉 Punto de recogida</strong>
                 <small>Estación RENFE · Azuqueca de Henares</small>
               </span>
-              <b>GRATIS</b>
+
+              <b class="free">GRATIS</b>
             </label>
 
-            <label class="radio-card">
+
+            <label class="delivery-option">
               <input type="radio" name="delivery" value="home">
-              <span class="radio-custom"></span>
-              <span class="radio-content">
+
+              <span class="custom-radio"></span>
+
+              <span class="delivery-text">
                 <strong>🏠 A domicilio</strong>
-                <small>Indica tu dirección de entrega</small>
+                <small>Introduce los datos de entrega</small>
               </span>
-              <b id="deliveryPriceLabel">Consultar</b>
+
+              <b id="shippingLabel">CONSULTAR</b>
             </label>
+
           </div>
 
-          <div class="address-box hidden" id="addressBox">
-            <div class="form-grid">
-              <div class="field full">
-                <label for="address">DIRECCIÓN DE ENTREGA</label>
-                <input type="text" id="address" placeholder="Calle, número, piso..." autocomplete="street-address">
-              </div>
 
-              <div class="field">
-                <label for="city">LOCALIDAD</label>
-                <input type="text" id="city" placeholder="Azuqueca de Henares" autocomplete="address-level2">
-              </div>
+          <div class="address-panel hidden" id="addressPanel">
 
-              <div class="field">
-                <label for="postal">CÓDIGO POSTAL</label>
-                <input type="text" id="postal" placeholder="19200" inputmode="numeric" autocomplete="postal-code">
-              </div>
+            <div class="address-title">
+              <span>DATOS DE ENTREGA</span>
+              <small>OBLIGATORIOS PARA DOMICILIO</small>
             </div>
+
+            <div class="form-grid">
+
+              <div class="field full">
+                <label for="address">DIRECCIÓN *</label>
+                <input
+                  type="text"
+                  id="address"
+                  placeholder="Calle, número, piso..."
+                  autocomplete="street-address">
+              </div>
+
+              <div class="field">
+                <label for="city">LOCALIDAD *</label>
+                <input
+                  type="text"
+                  id="city"
+                  placeholder="Azuqueca de Henares"
+                  autocomplete="address-level2">
+              </div>
+
+              <div class="field">
+                <label for="postal">CÓDIGO POSTAL *</label>
+                <input
+                  type="text"
+                  id="postal"
+                  placeholder="19200"
+                  autocomplete="postal-code"
+                  inputmode="numeric">
+              </div>
+
+            </div>
+
           </div>
 
         </div>
 
-        <aside class="summary-panel glass reveal reveal-delay">
 
-          <div class="summary-header">
+        <!-- RESUMEN -->
+        <aside class="summary-card glass reveal delay-1">
+
+          <div class="summary-title">
             <span>RESUMEN</span>
-            <span class="summary-line"></span>
+            <i></i>
           </div>
 
           <div class="summary-row">
-            <span>Empanadas</span>
-            <strong id="summaryQuantity">1 × 3,00 €</strong>
+            <span>Unidades</span>
+            <strong id="summaryQuantity">1 × 1,00 €</strong>
           </div>
 
           <div class="summary-row">
             <span>Subtotal</span>
-            <strong id="subtotal">3,00 €</strong>
+            <strong id="subtotal">1,00 €</strong>
           </div>
 
           <div class="summary-row">
@@ -280,17 +376,20 @@
             <strong id="shipping">0,00 €</strong>
           </div>
 
-          <div class="summary-total">
+          <div class="total-row">
             <span>TOTAL</span>
-            <strong id="total">3,00 €</strong>
+            <strong id="total">1,00 €</strong>
           </div>
 
-          <div class="summary-note">
+          <div class="summary-message">
             <span>✓</span>
-            El coste de envío se añadirá únicamente si corresponde.
+            <p>
+              Punto de recogida en RENFE:
+              <strong>sin gastos de envío.</strong>
+            </p>
           </div>
 
-          <a href="#datos" class="btn btn-primary full-btn">
+          <a href="#datos" class="neon-button primary full">
             CONTINUAR
             <b>↓</b>
           </a>
@@ -300,94 +399,138 @@
       </div>
     </section>
 
-    <!-- DATOS -->
-    <section class="details-section section" id="datos">
-      <div class="section-heading reveal">
-        <span class="section-number">03 / DATOS</span>
-        <h2>CONFIRMA LOS <span>DETALLES</span></h2>
-        <p>Necesitamos estos datos para preparar correctamente tu pedido.</p>
+
+    <!-- DATOS Y PAGO -->
+    <section class="section details-section" id="datos">
+
+      <div class="section-heading centered reveal">
+        <span class="section-index">03 / CONFIRMACIÓN</span>
+        <h2>TUS <span>DATOS</span></h2>
+        <p>Completa el pedido antes de enviarlo.</p>
       </div>
 
-      <form class="details-form glass reveal" id="orderForm">
+
+      <form class="details-card glass reveal" id="orderForm">
 
         <div class="form-grid">
 
           <div class="field">
             <label for="name">NOMBRE *</label>
-            <input type="text" id="name" required placeholder="Tu nombre" autocomplete="name">
+            <input
+              type="text"
+              id="name"
+              required
+              placeholder="Tu nombre"
+              autocomplete="name">
           </div>
 
           <div class="field">
             <label for="phone">TELÉFONO *</label>
-            <input type="tel" id="phone" required placeholder="Tu teléfono" autocomplete="tel">
+            <input
+              type="tel"
+              id="phone"
+              required
+              placeholder="Tu teléfono"
+              autocomplete="tel">
           </div>
 
           <div class="field">
-            <label for="dateInput">FECHA DEL PEDIDO *</label>
-            <input type="date" id="dateInput" required>
+            <label for="orderDate">FECHA *</label>
+            <input type="date" id="orderDate" required>
           </div>
 
           <div class="field">
-            <label for="timeInput">HORA PREFERIDA *</label>
-            <input type="time" id="timeInput" required>
+            <label for="orderTime">HORA *</label>
+            <input type="time" id="orderTime" required>
           </div>
 
           <div class="field full">
             <label for="message">OBSERVACIONES</label>
-            <textarea id="message" rows="4" placeholder="Escribe aquí cualquier observación sobre tu pedido..."></textarea>
+            <textarea
+              id="message"
+              rows="4"
+              placeholder="Observaciones sobre tu pedido..."></textarea>
           </div>
 
         </div>
 
-        <div class="payment-section" id="pago">
 
-          <div class="payment-title">
-            <span class="card-label">MÉTODO DE PAGO</span>
-            <h3>¿Cómo deseas pagar?</h3>
+        <!-- PAGO -->
+        <div class="payment-area" id="pago">
+
+          <div class="payment-heading">
+            <span class="card-label">04 / PAGO</span>
+            <h3>ELIGE CÓMO <span>PAGAR</span></h3>
+            <p>El pago queda asociado a la preparación de tu pedido.</p>
           </div>
 
-          <div class="payment-options">
 
-            <label class="payment-card">
+          <div class="payment-methods">
+
+            <label class="payment-method">
               <input type="radio" name="payment" value="paypal" checked>
+
               <span class="payment-radio"></span>
-              <span class="payment-icon paypal-icon">P</span>
-              <span>
+
+              <span class="payment-symbol paypal-symbol">P</span>
+
+              <span class="payment-info">
                 <strong>PayPal</strong>
                 <small>Pago online</small>
               </span>
             </label>
 
-            <label class="payment-card">
+
+            <label class="payment-method">
               <input type="radio" name="payment" value="cash">
+
               <span class="payment-radio"></span>
-              <span class="payment-icon cash-icon">€</span>
-              <span>
+
+              <span class="payment-symbol cash-symbol">€</span>
+
+              <span class="payment-info">
                 <strong>Metálico</strong>
-                <small>Pago en la entrega / recogida</small>
+                <small>Pago al recibir / recoger</small>
               </span>
             </label>
 
           </div>
 
+
           <!-- PAYPAL -->
-          <div class="paypal-wrapper" id="paypalWrapper">
+          <div class="paypal-panel" id="paypalPanel">
 
-            <div class="paypal-header">
+            <div class="paypal-top">
+
               <div>
-                <span class="card-label">PAGO SEGURO</span>
-                <h4>Finaliza tu pago con PayPal</h4>
+                <span class="paypal-label">PAYPAL</span>
+                <h4>PAGO ONLINE</h4>
               </div>
-              <span class="secure-badge">🔒 SEGURO</span>
+
+              <span class="secure">
+                🔒 SEGURO
+              </span>
+
             </div>
 
-            <div class="paypal-summary">
-              <span>Total de tu pedido</span>
-              <strong id="paypalTotal">3,00 €</strong>
+
+            <div class="paypal-order">
+
+              <div>
+                <small>TOTAL DEL PEDIDO</small>
+                <strong id="paypalTotal">1,00 €</strong>
+              </div>
+
+              <div>
+                <small>PRODUCTO</small>
+                <strong id="paypalUnits">1 unidad</strong>
+              </div>
+
             </div>
 
-            <div class="paypal-button-area">
-              <!-- PayPal proporcionado por el propietario -->
+
+            <div class="paypal-action">
+
               <script
                 src="https://www.paypalobjects.com/ncp/cart/cart.js"
                 data-merchant-id="AXR45CVCH9QE4">
@@ -402,124 +545,202 @@
                   cartPaypal.Cart({ id: "pp-view-cart" });
                 }
               </script>
+
             </div>
 
-            <p class="paypal-notice">
-              Selecciona tus productos y revisa el importe antes de completar el pago.
+            <p class="paypal-help">
+              Revisa el importe de tu pedido antes de completar el pago.
             </p>
 
           </div>
 
-          <div class="cash-wrapper hidden" id="cashWrapper">
-            <div class="cash-message">
-              <span>💶</span>
-              <div>
-                <strong>Pago en metálico</strong>
-                <p>Abonarás el importe acordado al recibir tu pedido o en el punto de recogida.</p>
-              </div>
+
+          <!-- METÁLICO -->
+          <div class="cash-panel hidden" id="cashPanel">
+
+            <div class="cash-icon">€</div>
+
+            <div>
+              <strong>Pago en metálico</strong>
+              <p>
+                Puedes pagar en metálico al recoger tu pedido
+                o al recibirlo, según la modalidad acordada.
+              </p>
             </div>
+
           </div>
 
         </div>
 
-        <button type="submit" class="btn btn-whatsapp full-btn">
-          <span>CONFIRMAR PEDIDO POR WHATSAPP</span>
+
+        <button type="submit" class="whatsapp-button">
+          <span>🥟</span>
+          <strong>CONFIRMAR PEDIDO POR WHATSAPP</strong>
           <b>↗</b>
         </button>
 
-        <p class="form-security">
-          🔐 Tus datos se utilizan únicamente para gestionar tu pedido.
+        <p class="privacy-note">
+          🔐 Datos utilizados exclusivamente para gestionar tu pedido.
         </p>
 
       </form>
+
     </section>
+
 
     <!-- MENSAJE -->
-    <section class="message-section section">
-      <div class="message-box reveal">
-        <div class="quote-mark">“</div>
+    <section class="section message-section">
+
+      <div class="message-card reveal">
+
+        <span class="message-symbol">“</span>
+
+        <span class="section-index">PEDIDO DIGITAL</span>
+
         <h2>
-          TU PEDIDO.<br>
-          <span>TU MOMENTO.</span>
+          SENCILLO.<br>
+          <span>RÁPIDO.</span><br>
+          DIRECTO.
         </h2>
+
         <p>
-          Una vez enviado el pedido, recibirás la confirmación directamente por WhatsApp.
+          Elige tus empanadas, completa tus datos,
+          selecciona la forma de entrega y confirma.
         </p>
+
       </div>
+
     </section>
 
-    <!-- BUSCADOR -->
-    <section class="search-section section">
-      <div class="section-heading reveal">
-        <span class="section-number">04 / CONECTA</span>
-        <h2>TODO A TU <span>ALCANCE</span></h2>
+
+    <!-- GOOGLE + REDES -->
+    <section class="section connect-section">
+
+      <div class="section-heading centered reveal">
+        <span class="section-index">05 / CONECTA</span>
+        <h2>TODO EN <span>UN SOLO LUGAR</span></h2>
       </div>
 
-      <div class="google-search reveal">
+
+      <div class="google-box reveal">
+
         <form action="https://www.google.com/search" method="GET" target="_blank">
-          <span class="search-icon">⌕</span>
-          <input type="search" name="q" placeholder="Buscar en Google..." aria-label="Buscar en Google">
+
+          <span class="google-icon">G</span>
+
+          <input
+            type="search"
+            name="q"
+            placeholder="Buscar en Google..."
+            aria-label="Buscar en Google">
+
           <button type="submit">BUSCAR</button>
+
         </form>
+
       </div>
+
 
       <div class="social-grid reveal">
 
-        <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" class="social-card youtube">
-          <span class="social-logo">▶</span>
+        <a
+          href="https://www.youtube.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link">
+
+          <span class="social-icon youtube">▶</span>
           <span>YouTube</span>
           <b>↗</b>
+
         </a>
 
-        <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" class="social-card tiktok">
-          <span class="social-logo">♪</span>
+
+        <a
+          href="https://www.tiktok.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link">
+
+          <span class="social-icon tiktok">♪</span>
           <span>TikTok</span>
           <b>↗</b>
+
         </a>
 
-        <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="social-card facebook">
-          <span class="social-logo">f</span>
+
+        <a
+          href="https://www.facebook.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link">
+
+          <span class="social-icon facebook">f</span>
           <span>Facebook</span>
           <b>↗</b>
+
         </a>
 
-        <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="social-card instagram">
-          <span class="social-logo">◎</span>
+
+        <a
+          href="https://www.instagram.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link">
+
+          <span class="social-icon instagram">◎</span>
           <span>Instagram</span>
           <b>↗</b>
+
         </a>
 
       </div>
+
     </section>
 
-    <!-- CONTACTO -->
-    <section class="contact-section section" id="contacto">
-      <div class="contact-grid">
 
-        <div class="contact-content reveal">
-          <span class="section-number">05 / CONTACTO</span>
-          <h2>HABLEMOS<br><span>POR WHATSAPP</span></h2>
+    <!-- CONTACTO -->
+    <section class="section contact-section" id="contacto">
+
+      <div class="contact-layout">
+
+        <div class="contact-copy reveal">
+
+          <span class="section-index">06 / WHATSAPP</span>
+
+          <h2>
+            HABLAMOS<br>
+            <span>DIRECTAMENTE</span>
+          </h2>
+
           <p>
-            ¿Tienes una consulta antes de realizar tu pedido?
-            Escríbenos directamente.
+            ¿Tienes alguna pregunta sobre disponibilidad,
+            entrega o recogida?
           </p>
 
           <a
+            class="whatsapp-contact"
             href="https://wa.me/34602487576"
             target="_blank"
-            rel="noopener noreferrer"
-            class="whatsapp-direct">
-            <span class="whatsapp-icon">☏</span>
+            rel="noopener noreferrer">
+
+            <span class="wa-symbol">☏</span>
+
             <span>
               <small>WHATSAPP</small>
               +34 602 487 576
             </span>
+
             <b>↗</b>
+
           </a>
+
         </div>
 
-        <div class="contact-terminal glass reveal reveal-delay">
-          <div class="terminal-top">
+
+        <div class="terminal glass reveal delay-1">
+
+          <div class="terminal-head">
             <span></span>
             <span></span>
             <span></span>
@@ -527,33 +748,69 @@
           </div>
 
           <div class="terminal-body">
-            <p><i>01</i> Servicio <strong>ONLINE</strong></p>
-            <p><i>02</i> Pedidos <strong>ACTIVOS</strong></p>
-            <p><i>03</i> Recogida <strong>RENFE</strong></p>
-            <p><i>04</i> WhatsApp <strong>DIRECTO</strong></p>
-            <div class="terminal-cursor">_</div>
+
+            <p>
+              <i>01</i>
+              SERVICIO
+              <strong>ONLINE</strong>
+            </p>
+
+            <p>
+              <i>02</i>
+              PRODUCTO
+              <strong>1,00 €</strong>
+            </p>
+
+            <p>
+              <i>03</i>
+              RECOGIDA
+              <strong>RENFE</strong>
+            </p>
+
+            <p>
+              <i>04</i>
+              WHATSAPP
+              <strong>ACTIVO</strong>
+            </p>
+
+            <span class="terminal-cursor">_</span>
+
           </div>
+
         </div>
 
       </div>
+
     </section>
 
   </main>
 
+
   <footer>
-    <div class="footer-brand">🥟 EMPANADAS<span>.</span></div>
-    <p>Pedidos digitales · Azuqueca de Henares</p>
-    <div class="footer-status">
-      <span class="status-light"></span>
+
+    <div class="footer-brand">
+      🥟 EMPANADAS<span>.</span>
+    </div>
+
+    <p>
+      Azuqueca de Henares · Pedidos digitales
+    </p>
+
+    <div class="footer-online">
+      <span class="online-dot"></span>
       SERVICIO ACTIVO
     </div>
+
   </footer>
+
 
   <div class="toast" id="toast">
     <span>✓</span>
     <p id="toastText">Pedido preparado.</p>
   </div>
 
+
   <script src="script.js"></script>
+
 </body>
 </html>

@@ -1,684 +1,626 @@
-/* script.js */
+// script.js
 
-document.addEventListener("DOMContentLoaded", () => {
+"use strict";
 
-  const WHATSAPP_NUMBER = "34602487576";
+/* =========================================
+   CONFIGURACIÓN
+========================================= */
 
-  const PRICE_PER_UNIT = 1;
+const CONFIG = {
+  whatsapp: "34602487576",
+  productName: "Empanada de pollo",
+  unitPrice: 3.00,
 
   /*
-    CONFIGURACIÓN DE ENVÍO
+   * Si posteriormente defines un precio fijo para el domicilio,
+   * cambia este valor.
+   *
+   * Si permanece en null, el pedido indicará:
+   * "Consultar envío".
+   */
+  homeDeliveryPrice: null,
 
-    Puedes modificar estos valores según tu zona.
+  pickupLocation: "Estación de RENFE de Azuqueca de Henares"
+};
 
-    Si una zona tiene coste 0, no se añade ningún gasto.
-    Puedes añadir más zonas al objeto SHIPPING_ZONES.
-  */
 
-  const SHIPPING_ZONES = {
-    "azuqueca": 0,
-    "alcala": 5,
-    "madrid": 10,
-    "otro": 10
+/* =========================================
+   ELEMENTOS
+========================================= */
+
+const loader = document.getElementById("pageLoader");
+const clockElement = document.getElementById("clock");
+const dateElement = document.getElementById("date");
+
+const quantityElement = document.getElementById("quantity");
+const summaryQuantity = document.getElementById("summaryQuantity");
+const subtotalElement = document.getElementById("subtotal");
+const shippingElement = document.getElementById("shipping");
+const totalElement = document.getElementById("total");
+const paypalTotal = document.getElementById("paypalTotal");
+
+const plusBtn = document.getElementById("plusBtn");
+const minusBtn = document.getElementById("minusBtn");
+
+const addressBox = document.getElementById("addressBox");
+const deliveryPriceLabel = document.getElementById("deliveryPriceLabel");
+
+const paypalWrapper = document.getElementById("paypalWrapper");
+const cashWrapper = document.getElementById("cashWrapper");
+
+const orderForm = document.getElementById("orderForm");
+
+const menuToggle = document.getElementById("menuToggle");
+const mainNav = document.getElementById("mainNav");
+
+const toast = document.getElementById("toast");
+const toastText = document.getElementById("toastText");
+
+
+/* =========================================
+   ESTADO
+========================================= */
+
+let quantity = 1;
+
+
+/* =========================================
+   UTILIDADES
+========================================= */
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR"
+  }).format(value);
+}
+
+function escapeText(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function showToast(message) {
+  if (!toast || !toastText) return;
+
+  toastText.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(showToast.timeout);
+
+  showToast.timeout = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3500);
+}
+
+
+/* =========================================
+   RELOJ Y FECHA EN TIEMPO REAL
+========================================= */
+
+function updateClock() {
+  const now = new Date();
+
+  const time = new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).format(now);
+
+  const date = new Intl.DateTimeFormat("es-ES", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  }).format(now);
+
+  if (clockElement) {
+    clockElement.textContent = time;
+  }
+
+  if (dateElement) {
+    dateElement.textContent =
+      date.charAt(0).toUpperCase() + date.slice(1);
+  }
+}
+
+updateClock();
+setInterval(updateClock, 1000);
+
+
+/* =========================================
+   FECHA MÍNIMA DEL PEDIDO
+========================================= */
+
+const dateInput = document.getElementById("dateInput");
+
+if (dateInput) {
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  const todayString = `${year}-${month}-${day}`;
+
+  dateInput.min = todayString;
+  dateInput.value = todayString;
+}
+
+
+/* =========================================
+   HORA POR DEFECTO
+========================================= */
+
+const timeInput = document.getElementById("timeInput");
+
+if (timeInput) {
+  const now = new Date();
+
+  let hours = now.getHours();
+  let minutes = now.getMinutes();
+
+  minutes = Math.ceil(minutes / 15) * 15;
+
+  if (minutes >= 60) {
+    hours += 1;
+    minutes = 0;
+  }
+
+  if (hours > 23) {
+    hours = 23;
+    minutes = 45;
+  }
+
+  timeInput.value =
+    `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+
+/* =========================================
+   CÁLCULO DEL PEDIDO
+========================================= */
+
+function getDelivery() {
+  const selected = document.querySelector(
+    'input[name="delivery"]:checked'
+  );
+
+  return selected ? selected.value : "pickup";
+}
+
+function getShippingCost() {
+  const delivery = getDelivery();
+
+  if (delivery === "pickup") {
+    return 0;
+  }
+
+  if (typeof CONFIG.homeDeliveryPrice === "number") {
+    return CONFIG.homeDeliveryPrice;
+  }
+
+  return null;
+}
+
+function calculateOrder() {
+  const subtotal = quantity * CONFIG.unitPrice;
+  const shipping = getShippingCost();
+
+  const total = shipping === null
+    ? subtotal
+    : subtotal + shipping;
+
+  return {
+    subtotal,
+    shipping,
+    total
   };
+}
+
+function updateOrderSummary() {
+  const order = calculateOrder();
+
+  quantityElement.textContent = quantity;
+
+  summaryQuantity.textContent =
+    `${quantity} × ${formatPrice(CONFIG.unitPrice)}`;
+
+  subtotalElement.textContent =
+    formatPrice(order.subtotal);
+
+  if (order.shipping === null) {
+    shippingElement.textContent = "Consultar";
+    totalElement.textContent = formatPrice(order.subtotal) + " + envío";
+  } else {
+    shippingElement.textContent =
+      formatPrice(order.shipping);
+
+    totalElement.textContent =
+      formatPrice(order.total);
+  }
+
+  if (paypalTotal) {
+    paypalTotal.textContent =
+      order.shipping === null
+        ? `${formatPrice(order.subtotal)} + envío`
+        : formatPrice(order.total);
+  }
+}
 
 
-  const $ = (selector) =>
-    document.querySelector(selector);
+/* =========================================
+   CANTIDAD
+========================================= */
 
+function setQuantity(value) {
+  quantity = Math.max(1, Math.min(99, Number(value) || 1));
 
-  /* LOADER */
+  updateOrderSummary();
 
-  window.addEventListener("load", () => {
-
-    setTimeout(() => {
-
-      $("#loader").classList.add("hide");
-
-    }, 500);
-
+  document.querySelectorAll("[data-qty]").forEach(button => {
+    button.classList.toggle(
+      "active",
+      Number(button.dataset.qty) === quantity
+    );
   });
+}
+
+plusBtn?.addEventListener("click", () => {
+  setQuantity(quantity + 1);
+});
+
+minusBtn?.addEventListener("click", () => {
+  setQuantity(quantity - 1);
+});
+
+document.querySelectorAll("[data-qty]").forEach(button => {
+  button.addEventListener("click", () => {
+    setQuantity(button.dataset.qty);
+  });
+});
 
 
-  /* RELOJ */
+/* =========================================
+   ENTREGA
+========================================= */
 
-  function updateClock() {
+function updateDeliveryUI() {
+  const delivery = getDelivery();
 
-    const now = new Date();
+  if (delivery === "home") {
+    addressBox?.classList.remove("hidden");
 
-    const hours =
-      String(now.getHours()).padStart(2, "0");
-
-    const minutes =
-      String(now.getMinutes()).padStart(2, "0");
-
-    const seconds =
-      String(now.getSeconds()).padStart(2, "0");
-
-    const day =
-      String(now.getDate()).padStart(2, "0");
-
-    const month =
-      String(now.getMonth() + 1).padStart(2, "0");
-
-    const year =
-      now.getFullYear();
-
-
-    $("#liveTime").textContent =
-      `${hours}:${minutes}:${seconds}`;
-
-    $("#liveDate").textContent =
-      `${day}/${month}/${year}`;
-
+    if (CONFIG.homeDeliveryPrice === null) {
+      deliveryPriceLabel.textContent = "Consultar";
+    } else {
+      deliveryPriceLabel.textContent =
+        formatPrice(CONFIG.homeDeliveryPrice);
+    }
+  } else {
+    addressBox?.classList.add("hidden");
+    deliveryPriceLabel.textContent = "GRATIS";
   }
 
+  updateOrderSummary();
+}
 
-  updateClock();
-
-  setInterval(updateClock, 1000);
-
-
-  /* AÑO */
-
-  $("#currentYear").textContent =
-    new Date().getFullYear();
+document.querySelectorAll('input[name="delivery"]').forEach(input => {
+  input.addEventListener("change", updateDeliveryUI);
+});
 
 
-  /* ELEMENTOS */
+/* =========================================
+   MÉTODO DE PAGO
+========================================= */
 
-  const quantity =
-    $("#quantity");
+function updatePaymentUI() {
+  const payment = document.querySelector(
+    'input[name="payment"]:checked'
+  )?.value;
 
-  const deliveryType =
-    $("#deliveryType");
-
-  const address =
-    $("#address");
-
-
-  /* CALCULAR ENVÍO */
-
-  function calculateShipping() {
-
-    if (deliveryType.value === "recogida") {
-
-      return 0;
-
-    }
-
-
-    /*
-      Para domicilio se puede seleccionar
-      una zona escribiéndola en la dirección.
-
-      Azuqueca = 0 €
-      Alcalá = 5 €
-      Madrid = 10 €
-      Otro = 10 €
-    */
-
-    const text =
-      address.value
-        .trim()
-        .toLowerCase();
-
-
-    if (
-      text.includes("azuqueca") ||
-      text.includes("azuqueca de henares")
-    ) {
-
-      return SHIPPING_ZONES.azuqueca;
-
-    }
-
-
-    if (
-      text.includes("alcala") ||
-      text.includes("alcalá")
-    ) {
-
-      return SHIPPING_ZONES.alcala;
-
-    }
-
-
-    if (
-      text.includes("madrid")
-    ) {
-
-      return SHIPPING_ZONES.madrid;
-
-    }
-
-
-    return SHIPPING_ZONES.otro;
-
+  if (payment === "paypal") {
+    paypalWrapper?.classList.remove("hidden");
+    cashWrapper?.classList.add("hidden");
+  } else {
+    paypalWrapper?.classList.add("hidden");
+    cashWrapper?.classList.remove("hidden");
   }
+}
 
+document.querySelectorAll('input[name="payment"]').forEach(input => {
+  input.addEventListener("change", updatePaymentUI);
+});
 
-  /* ACTUALIZAR TOTAL */
 
-  function updateTotals() {
+/* =========================================
+   MENÚ MÓVIL
+========================================= */
 
-    let amount =
-      parseInt(quantity.value, 10) || 1;
+menuToggle?.addEventListener("click", () => {
+  mainNav?.classList.toggle("open");
+});
 
+document.querySelectorAll(".main-nav a").forEach(link => {
+  link.addEventListener("click", () => {
+    mainNav?.classList.remove("open");
+  });
+});
 
-    amount =
-      Math.max(
-        1,
-        Math.min(100, amount)
-      );
 
+/* =========================================
+   ANIMACIONES DE ENTRADA
+========================================= */
 
-    quantity.value =
-      amount;
+function initRevealAnimations() {
+  const elements = document.querySelectorAll(".reveal");
 
-
-    const subtotal =
-      amount * PRICE_PER_UNIT;
-
-
-    const shipping =
-      calculateShipping();
-
-
-    const total =
-      subtotal + shipping;
-
-
-    $("#productSubtotal")
-      .textContent =
-      subtotal.toFixed(0);
-
-
-    $("#shippingCost")
-      .textContent =
-      `${shipping.toFixed(0)} €`;
-
-
-    $("#grandTotal")
-      .textContent =
-      total.toFixed(0);
-
-
-    $("#summaryQuantity")
-      .textContent =
-      amount;
-
-
-    $("#summaryShipping")
-      .textContent =
-      `${shipping.toFixed(0)} €`;
-
-
-    $("#summaryTotal")
-      .textContent =
-      total.toFixed(0);
-
-  }
-
-
-  /* CANTIDAD */
-
-  $("#decrease").addEventListener(
-    "click",
-    () => {
-
-      quantity.value =
-        Math.max(
-          1,
-          (parseInt(quantity.value,10) || 1) - 1
-        );
-
-      updateTotals();
-
-    }
-  );
-
-
-  $("#increase").addEventListener(
-    "click",
-    () => {
-
-      quantity.value =
-        Math.min(
-          100,
-          (parseInt(quantity.value,10) || 1) + 1
-        );
-
-      updateTotals();
-
-    }
-  );
-
-
-  quantity.addEventListener(
-    "input",
-    updateTotals
-  );
-
-
-  /* ENTREGA */
-
-  function updateDeliveryInterface() {
-
-    const isHome =
-      deliveryType.value === "domicilio";
-
-
-    $("#homeDelivery")
-      .classList.toggle(
-        "hidden",
-        !isHome
-      );
-
-
-    $("#pickupInfo")
-      .classList.toggle(
-        "hidden",
-        isHome
-      );
-
-
-    address.required =
-      isHome;
-
-
-    $("#summaryDelivery")
-      .textContent =
-      isHome
-        ? "A domicilio"
-        : "Recogida";
-
-
-    updateTotals();
-
-  }
-
-
-  deliveryType.addEventListener(
-    "change",
-    updateDeliveryInterface
-  );
-
-
-  address.addEventListener(
-    "input",
-    updateTotals
-  );
-
-
-  updateDeliveryInterface();
-
-
-  /* WHATSAPP */
-
-  $("#orderForm").addEventListener(
-    "submit",
-    (event) => {
-
-      event.preventDefault();
-
-
-      const form =
-        event.currentTarget;
-
-
-      if (!form.checkValidity()) {
-
-        form.reportValidity();
-
-        return;
-
-      }
-
-
-      const name =
-        $("#customerName")
-          .value
-          .trim();
-
-
-      const phone =
-        $("#customerPhone")
-          .value
-          .trim();
-
-
-      const amount =
-        parseInt(
-          quantity.value,
-          10
-        );
-
-
-      const subtotal =
-        amount * PRICE_PER_UNIT;
-
-
-      const shipping =
-        calculateShipping();
-
-
-      const total =
-        subtotal + shipping;
-
-
-      const delivery =
-        deliveryType.value;
-
-
-      const customerAddress =
-        address.value
-          .trim();
-
-
-      const message =
-        $("#message")
-          .value
-          .trim() ||
-        "Sin observaciones.";
-
-
-      const now =
-        new Date();
-
-
-      const date =
-        `${now.getFullYear()}-${String(
-          now.getMonth() + 1
-        ).padStart(2,"0")}-${String(
-          now.getDate()
-        ).padStart(2,"0")}`;
-
-
-      let deliveryText;
-
-
-      if (
-        delivery === "domicilio"
-      ) {
-
-        deliveryText =
-`🏠 *Entrega:* A domicilio
-📍 *Dirección:* ${customerAddress}
-🚚 *Gastos de envío:* ${shipping} €`;
-
-      } else {
-
-        deliveryText =
-`🚆 *Entrega:* Punto de recogida
-📍 *Punto:* Estación de Renfe de Azuqueca de Henares
-🚚 *Gastos de recogida:* 0 €`;
-
-      }
-
-
-      const whatsappMessage =
-`🥟 *NUEVO PEDIDO DE EMPANADAS*
-
-👤 *Nombre:* ${name}
-📞 *Teléfono:* ${phone}
-🥟 *Cantidad:* ${amount}
-💶 *Subtotal:* ${subtotal} €
-${deliveryText}
-💰 *TOTAL:* ${total} €
-📅 *Fecha:* ${date}
-📝 *Mensaje:* ${message}
-
-🔐 *PAGO ANTICIPADO*
-El pedido debe abonarse antes de preparar y coordinar la entrega.
-
-¡Hola! Me gustaría confirmar la disponibilidad de mi pedido.`;
-
-
-      const whatsappURL =
-        `https://wa.me/${WHATSAPP_NUMBER}` +
-        `?text=${encodeURIComponent(
-          whatsappMessage
-        )}`;
-
-
-      showToast(
-        "Pedido preparado. Abriendo WhatsApp..."
-      );
-
-
-      setTimeout(() => {
-
-        window.open(
-          whatsappURL,
-          "_blank",
-          "noopener,noreferrer"
-        );
-
-      }, 500);
-
-    }
-  );
-
-
-  /* MENÚ MÓVIL */
-
-  const menuToggle =
-    $("#menuToggle");
-
-  const mainNav =
-    $("#mainNav");
-
-
-  menuToggle.addEventListener(
-    "click",
-    () => {
-
-      const opened =
-        mainNav.classList.toggle(
-          "open"
-        );
-
-
-      menuToggle.setAttribute(
-        "aria-expanded",
-        String(opened)
-      );
-
-    }
-  );
-
-
-  mainNav
-    .querySelectorAll("a")
-    .forEach((link) => {
-
-      link.addEventListener(
-        "click",
-        () => {
-
-          mainNav.classList.remove(
-            "open"
-          );
-
-          menuToggle.setAttribute(
-            "aria-expanded",
-            "false"
-          );
-
-        }
-      );
-
+  if (!("IntersectionObserver" in window)) {
+    elements.forEach(element => {
+      element.classList.add("visible");
     });
+    return;
+  }
 
-
-  /* ANIMACIONES */
-
-  const observer =
-    new IntersectionObserver(
-      (entries, observer) => {
-
-        entries.forEach((entry) => {
-
-          if (
-            entry.isIntersecting
-          ) {
-
-            entry.target.classList.add(
-              "visible"
-            );
-
-            observer.unobserve(
-              entry.target
-            );
-
-          }
-
-        });
-
-      },
-      {
-        threshold: .12
-      }
-    );
-
-
-  document
-    .querySelectorAll(".reveal")
-    .forEach((element) => {
-
-      observer.observe(element);
-
-    });
-
-
-  /* GOOGLE */
-
-  $("#googleSearch")
-    .addEventListener(
-      "submit",
-      (event) => {
-
-        event.preventDefault();
-
-
-        const query =
-          $("#googleQuery")
-            .value
-            .trim();
-
-
-        if (!query) {
-
-          showToast(
-            "Escribe algo para buscar."
-          );
-
-          return;
-
+  const observer = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
         }
-
-
-        const googleURL =
-          `https://www.google.com/search?q=` +
-          encodeURIComponent(query);
-
-
-        window.open(
-          googleURL,
-          "_blank",
-          "noopener,noreferrer"
-        );
-
-      }
-    );
-
-
-  /* BOTÓN ARRIBA */
-
-  const backTop =
-    $("#backTop");
-
-
-  window.addEventListener(
-    "scroll",
-    () => {
-
-      if (
-        window.scrollY > 500
-      ) {
-
-        backTop.classList.add(
-          "show"
-        );
-
-      } else {
-
-        backTop.classList.remove(
-          "show"
-        );
-
-      }
-
+      });
     },
     {
-      passive: true
+      threshold: 0.12,
+      rootMargin: "0px 0px -40px 0px"
     }
   );
 
+  elements.forEach(element => {
+    observer.observe(element);
+  });
+}
 
-  backTop.addEventListener(
-    "click",
-    () => {
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
-    }
-  );
+initRevealAnimations();
 
 
-  /* MENSAJE */
+/* =========================================
+   LOADER
+========================================= */
 
-  function showToast(message) {
-
-    const toast =
-      $("#toast");
-
-
-    toast.textContent =
-      message;
-
-
-    toast.classList.add(
-      "show"
-    );
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    loader?.classList.add("loaded");
+  }, 700);
+});
 
 
-    clearTimeout(
-      showToast.timer
-    );
+/* =========================================
+   EFECTO DE LUZ DEL CURSOR
+========================================= */
+
+const cursorGlow = document.querySelector(".cursor-glow");
+
+if (cursorGlow && window.matchMedia("(pointer:fine)").matches) {
+  document.addEventListener("pointermove", event => {
+    cursorGlow.style.left = `${event.clientX}px`;
+    cursorGlow.style.top = `${event.clientY}px`;
+  });
+}
 
 
-    showToast.timer =
-      setTimeout(
-        () => {
+/* =========================================
+   VALIDACIÓN
+========================================= */
 
-          toast.classList.remove(
-            "show"
-          );
+function validateDeliveryData() {
+  const delivery = getDelivery();
 
-        },
-        3500
-      );
-
+  if (delivery !== "home") {
+    return true;
   }
 
+  const address = document.getElementById("address")?.value.trim();
+  const city = document.getElementById("city")?.value.trim();
+  const postal = document.getElementById("postal")?.value.trim();
 
-  /* INICIO */
+  if (!address || !city || !postal) {
+    showToast("Completa la dirección de entrega.");
+    document.getElementById("address")?.focus();
+    return false;
+  }
 
-  updateTotals();
+  return true;
+}
 
+
+/* =========================================
+   GENERAR PEDIDO PARA WHATSAPP
+========================================= */
+
+function buildWhatsAppMessage() {
+  const name =
+    document.getElementById("name")?.value.trim() || "";
+
+  const phone =
+    document.getElementById("phone")?.value.trim() || "";
+
+  const orderDate =
+    document.getElementById("dateInput")?.value || "";
+
+  const orderTime =
+    document.getElementById("timeInput")?.value || "";
+
+  const message =
+    document.getElementById("message")?.value.trim() || "Sin observaciones";
+
+  const delivery = getDelivery();
+
+  const payment =
+    document.querySelector(
+      'input[name="payment"]:checked'
+    )?.value || "paypal";
+
+  const order = calculateOrder();
+
+  const address =
+    document.getElementById("address")?.value.trim() || "";
+
+  const city =
+    document.getElementById("city")?.value.trim() || "";
+
+  const postal =
+    document.getElementById("postal")?.value.trim() || "";
+
+  let deliveryText = "";
+
+  if (delivery === "pickup") {
+    deliveryText =
+      `🚉 *Punto de recogida:* ${CONFIG.pickupLocation}\n` +
+      `💶 *Gasto de envío:* 0,00 €`;
+  } else {
+    deliveryText =
+      `🏠 *Entrega:* A domicilio\n` +
+      `📍 *Dirección:* ${address}\n` +
+      `🏙️ *Localidad:* ${city}\n` +
+      `📮 *Código postal:* ${postal}\n`;
+
+    if (order.shipping === null) {
+      deliveryText +=
+        `💶 *Gasto de envío:* Por confirmar`;
+    } else {
+      deliveryText +=
+        `💶 *Gasto de envío:* ${formatPrice(order.shipping)}`;
+    }
+  }
+
+  const paymentText =
+    payment === "paypal"
+      ? "PayPal · Pago online"
+      : "Metálico";
+
+  const totalText =
+    order.shipping === null
+      ? `${formatPrice(order.subtotal)} + envío`
+      : formatPrice(order.total);
+
+  return (
+    `🥟 *NUEVO PEDIDO DE EMPANADAS*\n\n` +
+
+    `👤 *Nombre:* ${name}\n` +
+    `📞 *Teléfono:* ${phone}\n` +
+    `🥟 *Producto:* ${CONFIG.productName}\n` +
+    `🥟 *Cantidad:* ${quantity}\n` +
+    `💶 *Subtotal:* ${formatPrice(order.subtotal)}\n` +
+    `💶 *Total:* ${totalText}\n\n` +
+
+    `${deliveryText}\n\n` +
+
+    `📅 *Fecha:* ${orderDate}\n` +
+    `⏰ *Hora preferida:* ${orderTime}\n` +
+    `💳 *Método de pago:* ${paymentText}\n` +
+    `📝 *Mensaje:* ${message}\n\n` +
+
+    `¡Hola! Me gustaría confirmar la disponibilidad de mi pedido.`
+  );
+}
+
+
+/* =========================================
+   ENVÍO A WHATSAPP
+========================================= */
+
+orderForm?.addEventListener("submit", event => {
+  event.preventDefault();
+
+  if (!orderForm.checkValidity()) {
+    orderForm.reportValidity();
+    showToast("Completa los campos obligatorios.");
+    return;
+  }
+
+  if (!validateDeliveryData()) {
+    return;
+  }
+
+  const message = buildWhatsAppMessage();
+
+  const whatsappURL =
+    `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`;
+
+  showToast("Abriendo WhatsApp con tu pedido...");
+
+  setTimeout(() => {
+    window.open(
+      whatsappURL,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }, 500);
+});
+
+
+/* =========================================
+   ABRIR WHATSAPP DIRECTAMENTE
+========================================= */
+
+document.querySelectorAll('a[href*="wa.me"]').forEach(link => {
+  link.addEventListener("click", () => {
+    link.style.transform = "scale(.98)";
+
+    setTimeout(() => {
+      link.style.transform = "";
+    }, 180);
+  });
+});
+
+
+/* =========================================
+   ACTUALIZACIÓN INICIAL
+========================================= */
+
+setQuantity(1);
+updateDeliveryUI();
+updatePaymentUI();
+
+
+/* =========================================
+   PARALLAX SUAVE
+========================================= */
+
+if (
+  window.matchMedia("(pointer:fine)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+) {
+  const heroProduct = document.querySelector(".hero-product");
+
+  document.addEventListener("pointermove", event => {
+    if (!heroProduct) return;
+
+    const x =
+      (event.clientX / window.innerWidth - 0.5) * 8;
+
+    const y =
+      (event.clientY / window.innerHeight - 0.5) * 8;
+
+    heroProduct.style.transform =
+      `translate(${x}px, ${y}px)`;
+  });
+}
+
+
+/* =========================================
+   TECLADO: ESC CIERRA MENÚ
+========================================= */
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    mainNav?.classList.remove("open");
+  }
 });

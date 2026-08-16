@@ -2,10 +2,29 @@
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  const WHATSAPP = "34602487576";
-  const PRICE = 1;
+  const WHATSAPP_NUMBER = "34602487576";
 
-  const $ = (selector) => document.querySelector(selector);
+  const PRICE_PER_UNIT = 1;
+
+  /*
+    CONFIGURACIÓN DE ENVÍO
+
+    Puedes modificar estos valores según tu zona.
+
+    Si una zona tiene coste 0, no se añade ningún gasto.
+    Puedes añadir más zonas al objeto SHIPPING_ZONES.
+  */
+
+  const SHIPPING_ZONES = {
+    "azuqueca": 0,
+    "alcala": 5,
+    "madrid": 10,
+    "otro": 10
+  };
+
+
+  const $ = (selector) =>
+    document.querySelector(selector);
 
 
   /* LOADER */
@@ -14,9 +33,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setTimeout(() => {
 
-      $("#loader").classList.add("hidden");
+      $("#loader").classList.add("hide");
 
-    }, 400);
+    }, 500);
 
   });
 
@@ -45,13 +64,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const year =
       now.getFullYear();
 
-    $("#time").textContent =
+
+    $("#liveTime").textContent =
       `${hours}:${minutes}:${seconds}`;
 
-    $("#date").textContent =
+    $("#liveDate").textContent =
       `${day}/${month}/${year}`;
 
   }
+
 
   updateClock();
 
@@ -60,111 +81,237 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* AÑO */
 
-  $("#year").textContent =
+  $("#currentYear").textContent =
     new Date().getFullYear();
 
 
-  /* CANTIDAD */
+  /* ELEMENTOS */
 
-  const quantity = $("#quantity");
+  const quantity =
+    $("#quantity");
 
-  function updatePrice() {
+  const deliveryType =
+    $("#deliveryType");
 
-    let value =
-      parseInt(quantity.value, 10) || 1;
+  const address =
+    $("#address");
 
-    value =
-      Math.max(1, Math.min(100, value));
 
-    quantity.value = value;
+  /* CALCULAR ENVÍO */
 
-    const total =
-      value * PRICE;
+  function calculateShipping() {
 
-    $("#total").textContent =
-      total.toFixed(0);
+    if (deliveryType.value === "recogida") {
 
-    $("#summaryTotal").textContent =
-      total.toFixed(0);
+      return 0;
 
-    $("#summaryQuantity").textContent =
-      value;
+    }
+
+
+    /*
+      Para domicilio se puede seleccionar
+      una zona escribiéndola en la dirección.
+
+      Azuqueca = 0 €
+      Alcalá = 5 €
+      Madrid = 10 €
+      Otro = 10 €
+    */
+
+    const text =
+      address.value
+        .trim()
+        .toLowerCase();
+
+
+    if (
+      text.includes("azuqueca") ||
+      text.includes("azuqueca de henares")
+    ) {
+
+      return SHIPPING_ZONES.azuqueca;
+
+    }
+
+
+    if (
+      text.includes("alcala") ||
+      text.includes("alcalá")
+    ) {
+
+      return SHIPPING_ZONES.alcala;
+
+    }
+
+
+    if (
+      text.includes("madrid")
+    ) {
+
+      return SHIPPING_ZONES.madrid;
+
+    }
+
+
+    return SHIPPING_ZONES.otro;
 
   }
 
 
-  $("#minus").addEventListener("click", () => {
+  /* ACTUALIZAR TOTAL */
 
-    quantity.value =
+  function updateTotals() {
+
+    let amount =
+      parseInt(quantity.value, 10) || 1;
+
+
+    amount =
       Math.max(
         1,
-        (parseInt(quantity.value, 10) || 1) - 1
+        Math.min(100, amount)
       );
 
-    updatePrice();
-
-  });
-
-
-  $("#plus").addEventListener("click", () => {
 
     quantity.value =
-      Math.min(
-        100,
-        (parseInt(quantity.value, 10) || 1) + 1
-      );
+      amount;
 
-    updatePrice();
 
-  });
+    const subtotal =
+      amount * PRICE_PER_UNIT;
+
+
+    const shipping =
+      calculateShipping();
+
+
+    const total =
+      subtotal + shipping;
+
+
+    $("#productSubtotal")
+      .textContent =
+      subtotal.toFixed(0);
+
+
+    $("#shippingCost")
+      .textContent =
+      `${shipping.toFixed(0)} €`;
+
+
+    $("#grandTotal")
+      .textContent =
+      total.toFixed(0);
+
+
+    $("#summaryQuantity")
+      .textContent =
+      amount;
+
+
+    $("#summaryShipping")
+      .textContent =
+      `${shipping.toFixed(0)} €`;
+
+
+    $("#summaryTotal")
+      .textContent =
+      total.toFixed(0);
+
+  }
+
+
+  /* CANTIDAD */
+
+  $("#decrease").addEventListener(
+    "click",
+    () => {
+
+      quantity.value =
+        Math.max(
+          1,
+          (parseInt(quantity.value,10) || 1) - 1
+        );
+
+      updateTotals();
+
+    }
+  );
+
+
+  $("#increase").addEventListener(
+    "click",
+    () => {
+
+      quantity.value =
+        Math.min(
+          100,
+          (parseInt(quantity.value,10) || 1) + 1
+        );
+
+      updateTotals();
+
+    }
+  );
 
 
   quantity.addEventListener(
     "input",
-    updatePrice
+    updateTotals
   );
 
 
   /* ENTREGA */
 
-  const delivery =
-    $("#delivery");
+  function updateDeliveryInterface() {
 
-  function updateDelivery() {
+    const isHome =
+      deliveryType.value === "domicilio";
 
-    const home =
-      delivery.value === "domicilio";
 
-    $("#addressContainer")
+    $("#homeDelivery")
       .classList.toggle(
         "hidden",
-        !home
+        !isHome
       );
 
-    $("#pickupContainer")
+
+    $("#pickupInfo")
       .classList.toggle(
         "hidden",
-        home
+        isHome
       );
 
-    $("#address").required =
-      home;
+
+    address.required =
+      isHome;
+
 
     $("#summaryDelivery")
       .textContent =
-      home
+      isHome
         ? "A domicilio"
         : "Recogida";
+
+
+    updateTotals();
 
   }
 
 
-  delivery.addEventListener(
+  deliveryType.addEventListener(
     "change",
-    updateDelivery
+    updateDeliveryInterface
   );
 
-  updateDelivery();
+
+  address.addEventListener(
+    "input",
+    updateTotals
+  );
+
+
+  updateDeliveryInterface();
 
 
   /* WHATSAPP */
@@ -175,8 +322,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       event.preventDefault();
 
+
       const form =
         event.currentTarget;
+
 
       if (!form.checkValidity()) {
 
@@ -188,56 +337,82 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       const name =
-        $("#name").value.trim();
+        $("#customerName")
+          .value
+          .trim();
+
 
       const phone =
-        $("#phone").value.trim();
+        $("#customerPhone")
+          .value
+          .trim();
+
 
       const amount =
         parseInt(
-          $("#quantity").value,
+          quantity.value,
           10
         );
 
+
+      const subtotal =
+        amount * PRICE_PER_UNIT;
+
+
+      const shipping =
+        calculateShipping();
+
+
       const total =
-        amount * PRICE;
+        subtotal + shipping;
 
-      const type =
-        $("#delivery").value;
 
-      const address =
-        $("#address").value.trim();
+      const delivery =
+        deliveryType.value;
+
+
+      const customerAddress =
+        address.value
+          .trim();
+
 
       const message =
-        $("#message").value.trim() ||
-        "Sin mensaje adicional.";
+        $("#message")
+          .value
+          .trim() ||
+        "Sin observaciones.";
 
 
       const now =
         new Date();
 
+
       const date =
         `${now.getFullYear()}-${String(
           now.getMonth() + 1
-        ).padStart(2, "0")}-${String(
+        ).padStart(2,"0")}-${String(
           now.getDate()
-        ).padStart(2, "0")}`;
+        ).padStart(2,"0")}`;
 
 
       let deliveryText;
 
 
-      if (type === "domicilio") {
+      if (
+        delivery === "domicilio"
+      ) {
 
         deliveryText =
 `🏠 *Entrega:* A domicilio
-📍 *Dirección:* ${address}`;
+📍 *Dirección:* ${customerAddress}
+🚚 *Gastos de envío:* ${shipping} €`;
 
       } else {
 
         deliveryText =
-`🚆 *Entrega:* Recogida gratuita
-📍 *Punto de recogida:* Estación de Renfe de Azuqueca de Henares`;
+`🚆 *Entrega:* Punto de recogida
+📍 *Punto:* Estación de Renfe de Azuqueca de Henares
+🚚 *Gastos de recogida:* 0 €`;
 
       }
 
@@ -247,20 +422,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
 👤 *Nombre:* ${name}
 📞 *Teléfono:* ${phone}
-🥟 *Cantidad:* ${amount} unidades
-💶 *Total:* ${total} €
+🥟 *Cantidad:* ${amount}
+💶 *Subtotal:* ${subtotal} €
 ${deliveryText}
+💰 *TOTAL:* ${total} €
 📅 *Fecha:* ${date}
 📝 *Mensaje:* ${message}
+
+🔐 *PAGO ANTICIPADO*
+El pedido debe abonarse antes de preparar y coordinar la entrega.
 
 ¡Hola! Me gustaría confirmar la disponibilidad de mi pedido.`;
 
 
-      const url =
-        `https://wa.me/${WHATSAPP}?text=` +
-        encodeURIComponent(
+      const whatsappURL =
+        `https://wa.me/${WHATSAPP_NUMBER}` +
+        `?text=${encodeURIComponent(
           whatsappMessage
-        );
+        )}`;
 
 
       showToast(
@@ -268,11 +447,15 @@ ${deliveryText}
       );
 
 
-      window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
-      );
+      setTimeout(() => {
+
+        window.open(
+          whatsappURL,
+          "_blank",
+          "noopener,noreferrer"
+        );
+
+      }, 500);
 
     }
   );
@@ -280,34 +463,47 @@ ${deliveryText}
 
   /* MENÚ MÓVIL */
 
-  const menuButton =
-    $("#menuButton");
+  const menuToggle =
+    $("#menuToggle");
 
-  const nav =
-    $("#nav");
+  const mainNav =
+    $("#mainNav");
 
 
-  menuButton.addEventListener(
+  menuToggle.addEventListener(
     "click",
     () => {
 
-      nav.classList.toggle(
-        "open"
+      const opened =
+        mainNav.classList.toggle(
+          "open"
+        );
+
+
+      menuToggle.setAttribute(
+        "aria-expanded",
+        String(opened)
       );
 
     }
   );
 
 
-  nav.querySelectorAll("a")
+  mainNav
+    .querySelectorAll("a")
     .forEach((link) => {
 
       link.addEventListener(
         "click",
         () => {
 
-          nav.classList.remove(
+          mainNav.classList.remove(
             "open"
+          );
+
+          menuToggle.setAttribute(
+            "aria-expanded",
+            "false"
           );
 
         }
@@ -324,7 +520,9 @@ ${deliveryText}
 
         entries.forEach((entry) => {
 
-          if (entry.isIntersecting) {
+          if (
+            entry.isIntersecting
+          ) {
 
             entry.target.classList.add(
               "visible"
@@ -340,7 +538,7 @@ ${deliveryText}
 
       },
       {
-        threshold: 0.12
+        threshold: .12
       }
     );
 
@@ -356,17 +554,19 @@ ${deliveryText}
 
   /* GOOGLE */
 
-  $("#googleForm")
+  $("#googleSearch")
     .addEventListener(
       "submit",
       (event) => {
 
         event.preventDefault();
 
+
         const query =
-          $("#googleInput")
+          $("#googleQuery")
             .value
             .trim();
+
 
         if (!query) {
 
@@ -379,8 +579,13 @@ ${deliveryText}
         }
 
 
+        const googleURL =
+          `https://www.google.com/search?q=` +
+          encodeURIComponent(query);
+
+
         window.open(
-          `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+          googleURL,
           "_blank",
           "noopener,noreferrer"
         );
@@ -391,23 +596,25 @@ ${deliveryText}
 
   /* BOTÓN ARRIBA */
 
-  const topButton =
-    $("#topButton");
+  const backTop =
+    $("#backTop");
 
 
   window.addEventListener(
     "scroll",
     () => {
 
-      if (window.scrollY > 500) {
+      if (
+        window.scrollY > 500
+      ) {
 
-        topButton.classList.add(
+        backTop.classList.add(
           "show"
         );
 
       } else {
 
-        topButton.classList.remove(
+        backTop.classList.remove(
           "show"
         );
 
@@ -420,7 +627,7 @@ ${deliveryText}
   );
 
 
-  topButton.addEventListener(
+  backTop.addEventListener(
     "click",
     () => {
 
@@ -433,38 +640,45 @@ ${deliveryText}
   );
 
 
-  /* TOAST */
+  /* MENSAJE */
 
-  function showToast(text) {
+  function showToast(message) {
 
     const toast =
       $("#toast");
 
+
     toast.textContent =
-      text;
+      message;
+
 
     toast.classList.add(
       "show"
     );
 
+
     clearTimeout(
-      showToast.timeout
+      showToast.timer
     );
 
-    showToast.timeout =
-      setTimeout(() => {
 
-        toast.classList.remove(
-          "show"
-        );
+    showToast.timer =
+      setTimeout(
+        () => {
 
-      }, 3500);
+          toast.classList.remove(
+            "show"
+          );
+
+        },
+        3500
+      );
 
   }
 
 
-  /* PRECIO INICIAL */
+  /* INICIO */
 
-  updatePrice();
+  updateTotals();
 
 });

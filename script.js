@@ -1,1015 +1,1452 @@
-// script.js
-
 "use strict";
 
-
 /* =========================================================
-   CONFIGURACIÓN PRINCIPAL
+   CONFIGURACIÓN
 ========================================================= */
 
 const CONFIG = {
   whatsapp: "34602487576",
-
-  product: {
-    name: "Empanada de pollo",
-    price: 1.00
-  },
-
-  pickup: {
-    name: "Punto de recogida",
-    location: "Estación de RENFE de Azuqueca de Henares",
-    shipping: 0
-  },
+  unitPrice: 1.50,
 
   /*
-    Si quieres establecer posteriormente un precio fijo
-    para el domicilio, cambia null por un número.
-
-    Ejemplo:
-    homeDeliveryShipping: 2.50
-
-    Si permanece en null:
-    el coste se mostrará como "Consultar".
+    Coste de envío.
+    Modifica estos valores según las zonas reales de reparto.
+    0 = sin coste.
   */
-  homeDeliveryShipping: null
+  shipping: {
+    pickup: 0,
+    home: 2.50
+  },
+
+  currency: "EUR",
+
+  /*
+    Contraseña del panel local.
+    IMPORTANTE: para administración real debe existir
+    un backend/servidor con autenticación.
+  */
+  adminPassword: "AzuqueCa2026"
 };
 
+const PACKS = {
+  6: {
+    name: "Pack x6",
+    quantity: 6,
+    price: 9.00
+  },
+
+  10: {
+    name: "Pack x10",
+    quantity: 10,
+    price: 15.00
+  },
+
+  20: {
+    name: "Pack x20",
+    quantity: 20,
+    price: 30.00
+  }
+};
+
+let cart = [];
+
+let selectedDelivery = "pickup";
+
+let paypalRendered = false;
+
+let currentOrder = null;
 
 /* =========================================================
-   ELEMENTOS
+   HELPERS
 ========================================================= */
 
-const $ = selector =>
-  document.querySelector(selector);
+const $ = selector => document.querySelector(selector);
 
-const $$ = selector =>
-  document.querySelectorAll(selector);
-
-const loader = $("#pageLoader");
-
-const clock = $("#clock");
-const date = $("#date");
-
-const quantityElement = $("#quantity");
-const plusBtn = $("#plusBtn");
-const minusBtn = $("#minusBtn");
-
-const summaryQuantity = $("#summaryQuantity");
-const subtotalElement = $("#subtotal");
-const shippingElement = $("#shipping");
-const totalElement = $("#total");
-
-const paypalTotal = $("#paypalTotal");
-const paypalUnits = $("#paypalUnits");
-
-const addressPanel = $("#addressPanel");
-const shippingLabel = $("#shippingLabel");
-
-const paypalPanel = $("#paypalPanel");
-const cashPanel = $("#cashPanel");
-
-const orderForm = $("#orderForm");
-
-const menuToggle = $("#menuToggle");
-const mainNav = $("#mainNav");
-
-const toast = $("#toast");
-const toastText = $("#toastText");
-
-
-/* =========================================================
-   ESTADO
-========================================================= */
-
-let quantity = 1;
-
-
-/* =========================================================
-   FORMATO DE DINERO
-========================================================= */
+const $$ = selector => [...document.querySelectorAll(selector)];
 
 function money(value) {
-
-  return new Intl.NumberFormat("es-ES", {
+  return Number(value || 0).toLocaleString("es-ES", {
     style: "currency",
-    currency: "EUR"
-  }).format(value);
-
+    currency: CONFIG.currency
+  });
 }
 
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-/* =========================================================
-   TOAST
-========================================================= */
+function showToast(message) {
+  const toast = $("#toast");
 
-function notify(message) {
+  if (!toast) return;
 
-  if (!toast || !toastText) return;
-
-  toastText.textContent = message;
-
+  toast.textContent = message;
   toast.classList.add("show");
 
-  clearTimeout(notify.timer);
+  clearTimeout(window.toastTimer);
 
-  notify.timer = setTimeout(() => {
-
+  window.toastTimer = setTimeout(() => {
     toast.classList.remove("show");
-
-  }, 3500);
-
+  }, 3000);
 }
 
+/* =========================================================
+   REVEAL ANIMATIONS
+========================================================= */
+
+const revealObserver = new IntersectionObserver(
+  entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  },
+  {
+    threshold: 0.12
+  }
+);
+
+$$(".reveal").forEach(element => {
+  revealObserver.observe(element);
+});
 
 /* =========================================================
-   RELOJ
+   CURSOR NEON
+========================================================= */
+
+document.addEventListener("pointermove", event => {
+  const glow = $(".cursor-glow");
+
+  if (!glow) return;
+
+  glow.style.left = `${event.clientX}px`;
+  glow.style.top = `${event.clientY}px`;
+});
+
+/* =========================================================
+   FECHA Y HORA
 ========================================================= */
 
 function updateClock() {
-
   const now = new Date();
 
-  const currentTime =
-    new Intl.DateTimeFormat("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false
-    }).format(now);
+  const time = now.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
 
-  const currentDate =
-    new Intl.DateTimeFormat("es-ES", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    }).format(now);
+  const date = now.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
 
-  if (clock) {
-
-    clock.textContent =
-      currentTime;
-
-  }
-
-  if (date) {
-
-    date.textContent =
-      currentDate
-        .charAt(0)
-        .toUpperCase()
-      +
-      currentDate.slice(1);
-
-  }
-
+  $("#liveTime").textContent = time;
+  $("#liveDate").textContent =
+    date.charAt(0).toUpperCase() + date.slice(1);
 }
 
 updateClock();
-
-setInterval(
-  updateClock,
-  1000
-);
-
+setInterval(updateClock, 1000);
 
 /* =========================================================
-   FECHA MÍNIMA
+   VISITAS
 ========================================================= */
 
-const orderDate = $("#orderDate");
+function registerVisit() {
+  const current = Number(
+    localStorage.getItem("empanadas_visits") || "0"
+  );
 
-if (orderDate) {
+  const updated = current + 1;
+
+  localStorage.setItem(
+    "empanadas_visits",
+    String(updated)
+  );
+
+  $("#visitCounter").textContent =
+    String(updated).padStart(6, "0");
+}
+
+function getVisits() {
+  return Number(
+    localStorage.getItem("empanadas_visits") || "0"
+  );
+}
+
+registerVisit();
+
+/* =========================================================
+   FECHA MÍNIMA DEL PEDIDO
+========================================================= */
+
+function setupDate() {
+  const input = $("#orderDate");
+
+  if (!input) return;
 
   const today = new Date();
 
-  const yyyy =
-    today.getFullYear();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
 
-  const mm =
-    String(
-      today.getMonth() + 1
-    ).padStart(2, "0");
+  const formatted = `${yyyy}-${mm}-${dd}`;
 
-  const dd =
-    String(
-      today.getDate()
-    ).padStart(2, "0");
+  input.min = formatted;
 
-  const todayString =
-    `${yyyy}-${mm}-${dd}`;
-
-  orderDate.min =
-    todayString;
-
-  orderDate.value =
-    todayString;
-
-}
-
-
-/* =========================================================
-   HORA POR DEFECTO
-========================================================= */
-
-const orderTime = $("#orderTime");
-
-if (orderTime) {
-
-  const now = new Date();
-
-  let hour =
-    now.getHours();
-
-  let minute =
-    now.getMinutes();
-
-  minute =
-    Math.ceil(minute / 15) * 15;
-
-  if (minute >= 60) {
-
-    minute = 0;
-    hour++;
-
+  if (!input.value) {
+    input.value = formatted;
   }
-
-  if (hour > 23) {
-
-    hour = 23;
-    minute = 45;
-
-  }
-
-  orderTime.value =
-    `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-
 }
 
+setupDate();
+
+$("#currentYear").textContent = new Date().getFullYear();
 
 /* =========================================================
-   ENTREGA SELECCIONADA
+   CARRITO
 ========================================================= */
 
-function getDelivery() {
-
-  return $(
-    'input[name="delivery"]:checked'
-  )?.value || "pickup";
-
+function getCartQuantity() {
+  return cart.reduce((total, item) => {
+    return total + item.quantity;
+  }, 0);
 }
 
-
-/* =========================================================
-   PAGO SELECCIONADO
-========================================================= */
-
-function getPayment() {
-
-  return $(
-    'input[name="payment"]:checked'
-  )?.value || "paypal";
-
+function getCartSubtotal() {
+  return cart.reduce((total, item) => {
+    return total + item.price * item.quantity;
+  }, 0);
 }
-
-
-/* =========================================================
-   COSTE DE ENVÍO
-========================================================= */
 
 function getShipping() {
-
-  const delivery =
-    getDelivery();
-
-  if (delivery === "pickup") {
-
+  if (cart.length === 0) {
     return 0;
-
   }
 
-  return CONFIG.homeDeliveryShipping;
-
+  return CONFIG.shipping[selectedDelivery];
 }
 
-
-/* =========================================================
-   CALCULAR PEDIDO
-========================================================= */
-
-function calculateOrder() {
-
-  const subtotal =
-    quantity *
-    CONFIG.product.price;
-
-  const shipping =
-    getShipping();
-
-  const total =
-    shipping === null
-      ? null
-      : subtotal + shipping;
-
-  return {
-    quantity,
-    subtotal,
-    shipping,
-    total
-  };
-
+function getCartTotal() {
+  return getCartSubtotal() + getShipping();
 }
 
+function addProduct(quantity = 1) {
+  const existing = cart.find(
+    item => item.id === "pollo"
+  );
 
-/* =========================================================
-   ACTUALIZAR RESUMEN
-========================================================= */
-
-function updateSummary() {
-
-  const order =
-    calculateOrder();
-
-  if (quantityElement) {
-
-    quantityElement.textContent =
-      quantity;
-
-  }
-
-  if (summaryQuantity) {
-
-    summaryQuantity.textContent =
-      `${quantity} × ${money(CONFIG.product.price)}`;
-
-  }
-
-  if (subtotalElement) {
-
-    subtotalElement.textContent =
-      money(order.subtotal);
-
-  }
-
-  if (order.shipping === null) {
-
-    shippingElement.textContent =
-      "Consultar";
-
-    totalElement.textContent =
-      `${money(order.subtotal)} + envío`;
-
+  if (existing) {
+    existing.quantity += quantity;
   } else {
-
-    shippingElement.textContent =
-      money(order.shipping);
-
-    totalElement.textContent =
-      money(order.total);
-
+    cart.push({
+      id: "pollo",
+      name: "Empanada de pollo",
+      quantity,
+      price: CONFIG.unitPrice,
+      icon: "🥟",
+      type: "unit"
+    });
   }
 
-  if (paypalTotal) {
+  saveCart();
+  renderCart();
 
-    paypalTotal.textContent =
-      order.total === null
-        ? `${money(order.subtotal)} + envío`
-        : money(order.total);
-
-  }
-
-  if (paypalUnits) {
-
-    paypalUnits.textContent =
-      quantity === 1
-        ? "1 unidad"
-        : `${quantity} unidades`;
-
-  }
-
+  showToast(
+    quantity > 1
+      ? `${quantity} empanadas añadidas al carrito`
+      : "Empanada añadida al carrito"
+  );
 }
 
+function addPack(quantity) {
+  const pack = PACKS[quantity];
 
-/* =========================================================
-   CANTIDAD
-========================================================= */
+  if (!pack) return;
 
-function setQuantity(value) {
+  const existing = cart.find(
+    item => item.id === `pack-${quantity}`
+  );
 
-  const parsed =
-    Number(value);
-
-  if (!Number.isFinite(parsed)) {
-
-    quantity = 1;
-
+  if (existing) {
+    existing.quantity++;
   } else {
+    cart.push({
+      id: `pack-${quantity}`,
+      name: pack.name,
+      quantity: 1,
+      price: pack.price,
+      icon: "🥟",
+      type: "pack",
+      units: pack.quantity
+    });
+  }
 
-    quantity =
-      Math.max(
-        1,
-        Math.min(
-          99,
-          Math.round(parsed)
-        )
+  saveCart();
+  renderCart();
+
+  showToast(`${pack.name} añadido al carrito`);
+}
+
+function removeCartItem(id) {
+  cart = cart.filter(item => item.id !== id);
+
+  saveCart();
+  renderCart();
+
+  showToast("Producto eliminado");
+}
+
+function updateCartItem(id, delta) {
+  const item = cart.find(item => item.id === id);
+
+  if (!item) return;
+
+  item.quantity += delta;
+
+  if (item.quantity <= 0) {
+    removeCartItem(id);
+    return;
+  }
+
+  saveCart();
+  renderCart();
+}
+
+function saveCart() {
+  localStorage.setItem(
+    "empanadas_cart",
+    JSON.stringify(cart)
+  );
+}
+
+function loadCart() {
+  try {
+    const saved = localStorage.getItem("empanadas_cart");
+
+    cart = saved ? JSON.parse(saved) : [];
+
+    if (!Array.isArray(cart)) {
+      cart = [];
+    }
+  } catch {
+    cart = [];
+  }
+
+  renderCart();
+}
+
+function renderCart() {
+  const quantity = getCartQuantity();
+  const subtotal = getCartSubtotal();
+  const shipping = getShipping();
+  const total = subtotal + shipping;
+
+  $("#cartCount").textContent = quantity;
+  $("#summaryItems").textContent = `${quantity} uds.`;
+
+  $("#subtotal").textContent = money(subtotal);
+  $("#shipping").textContent =
+    shipping === 0 ? "GRATIS" : money(shipping);
+
+  $("#total").textContent = money(total);
+  $("#drawerTotal").textContent = money(total);
+  $("#paymentTotal").textContent = money(total);
+
+  const container = $("#cartItems");
+  const drawer = $("#drawerItems");
+
+  if (cart.length === 0) {
+    const empty = `
+      <div class="empty-cart">
+        <span>🛒</span>
+        <p>Tu carrito está vacío</p>
+        <a href="#menu">Ver empanadas</a>
+      </div>
+    `;
+
+    container.innerHTML = empty;
+    drawer.innerHTML = empty;
+
+    updateConfirmation();
+
+    return;
+  }
+
+  const html = cart.map(item => {
+    const itemTotal = item.price * item.quantity;
+
+    const unitsText =
+      item.type === "pack"
+        ? `${item.quantity} × ${item.units} unidades`
+        : `${item.quantity} unidad${item.quantity !== 1 ? "es" : ""}`;
+
+    return `
+      <div class="cart-item">
+
+        <div class="cart-item-icon">
+          ${item.icon}
+        </div>
+
+        <div>
+          <div class="cart-item-name">
+            ${escapeHTML(item.name)}
+          </div>
+
+          <div class="cart-item-meta">
+            ${unitsText}
+          </div>
+
+          <button
+            class="remove-item"
+            data-remove="${escapeHTML(item.id)}">
+            ELIMINAR
+          </button>
+        </div>
+
+        <div class="cart-item-price">
+          ${money(itemTotal)}
+        </div>
+
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = html;
+  drawer.innerHTML = html;
+
+  updateConfirmation();
+}
+
+document.addEventListener("click", event => {
+
+  const plus = event.target.closest(".qty-plus");
+
+  if (plus) {
+    const id = plus.dataset.id;
+
+    if (id === "pollo") {
+      const qty = Number(
+        $("#qty-pollo").textContent
       );
 
+      $("#qty-pollo").textContent = qty + 1;
+    }
+
+    return;
   }
 
-  updateSummary();
+  const minus = event.target.closest(".qty-minus");
 
-  $$(".offer-card").forEach(card => {
+  if (minus) {
+    const id = minus.dataset.id;
 
-    card.classList.toggle(
-      "active",
-      Number(card.dataset.qty) === quantity
-    );
+    if (id === "pollo") {
+      const qty = Number(
+        $("#qty-pollo").textContent
+      );
 
-  });
+      $("#qty-pollo").textContent =
+        Math.max(0, qty - 1);
+    }
 
+    return;
+  }
+
+  const add = event.target.closest(".add-product");
+
+  if (add) {
+    const quantity = Number(
+      $("#qty-pollo").textContent
+    ) || 1;
+
+    addProduct(quantity);
+
+    $("#qty-pollo").textContent = "0";
+
+    return;
+  }
+
+  const pack = event.target.closest(".pack-add");
+
+  if (pack) {
+    addPack(Number(pack.dataset.qty));
+    return;
+  }
+
+  const remove = event.target.closest("[data-remove]");
+
+  if (remove) {
+    removeCartItem(remove.dataset.remove);
+  }
+});
+
+/* =========================================================
+   CARRITO DRAWER
+========================================================= */
+
+function openCart() {
+  $("#cartDrawer").classList.add("open");
+  $("#cartOverlay").classList.add("active");
+  document.body.style.overflow = "hidden";
 }
 
+function closeCart() {
+  $("#cartDrawer").classList.remove("open");
+  $("#cartOverlay").classList.remove("active");
+  document.body.style.overflow = "";
+}
 
-/* =========================================================
-   BOTONES + / -
-========================================================= */
+$("#openCart").addEventListener("click", openCart);
+$("#closeCart").addEventListener("click", closeCart);
+$("#cartOverlay").addEventListener("click", closeCart);
 
-plusBtn?.addEventListener(
-  "click",
-  () => {
-
-    setQuantity(
-      quantity + 1
-    );
-
-  }
-);
-
-
-minusBtn?.addEventListener(
-  "click",
-  () => {
-
-    setQuantity(
-      quantity - 1
-    );
-
-  }
-);
-
-
-/* =========================================================
-   OFERTAS / PACKS
-========================================================= */
-
-$$(".offer-card").forEach(
-  card => {
-
-    card.addEventListener(
-      "click",
-      () => {
-
-        const qty =
-          Number(
-            card.dataset.qty
-          );
-
-        setQuantity(qty);
-
-        notify(
-          `Pack de ${qty} seleccionado.`
-        );
-
-      }
-    );
-
-  }
-);
-
+$("#goOrder").addEventListener("click", closeCart);
 
 /* =========================================================
    ENTREGA
 ========================================================= */
 
-function updateDelivery() {
+$$(".delivery-option").forEach(button => {
 
-  const delivery =
-    getDelivery();
+  button.addEventListener("click", () => {
 
-  if (delivery === "home") {
+    $$(".delivery-option").forEach(item => {
+      item.classList.remove("active");
+    });
 
-    addressPanel?.classList.remove(
-      "hidden"
-    );
+    button.classList.add("active");
 
-    if (
-      CONFIG.homeDeliveryShipping === null
-    ) {
+    selectedDelivery =
+      button.dataset.delivery;
 
-      shippingLabel.textContent =
-        "CONSULTAR";
+    $("#deliveryType").value =
+      selectedDelivery;
 
+    if (selectedDelivery === "home") {
+      $("#homeAddress").classList.add("visible");
+      $("#pickupAddress").style.display = "none";
     } else {
-
-      shippingLabel.textContent =
-        money(
-          CONFIG.homeDeliveryShipping
-        );
-
+      $("#homeAddress").classList.remove("visible");
+      $("#pickupAddress").style.display = "block";
     }
 
-  } else {
+    renderCart();
+  });
 
-    addressPanel?.classList.add(
-      "hidden"
-    );
+});
 
-    shippingLabel.textContent =
-      "GRATIS";
+/* =========================================================
+   FORMULARIO
+========================================================= */
 
-  }
+function getCustomerData() {
 
-  updateSummary();
+  return {
+    name: $("#customerName").value.trim(),
+    phone: $("#customerPhone").value.trim(),
+    date: $("#orderDate").value,
+    time: $("#orderTime").value,
+    address: $("#customerAddress").value.trim(),
+    city: $("#customerCity").value.trim(),
+    zip: $("#customerZip").value.trim(),
+    message: $("#customerMessage").value.trim()
+  };
 
 }
 
+function validateOrder(showMessage = true) {
 
-$$('input[name="delivery"]')
-  .forEach(input => {
+  if (cart.length === 0) {
+    if (showMessage) {
+      showToast("Añade al menos una empanada al carrito.");
+    }
 
-    input.addEventListener(
-      "change",
-      updateDelivery
-    );
-
-  });
-
-
-/* =========================================================
-   MÉTODO DE PAGO
-========================================================= */
-
-function updatePayment() {
-
-  const payment =
-    getPayment();
-
-  if (payment === "paypal") {
-
-    paypalPanel?.classList.remove(
-      "hidden"
-    );
-
-    cashPanel?.classList.add(
-      "hidden"
-    );
-
-  } else {
-
-    paypalPanel?.classList.add(
-      "hidden"
-    );
-
-    cashPanel?.classList.remove(
-      "hidden"
-    );
-
+    return false;
   }
 
-}
+  const customer = getCustomerData();
 
+  if (!customer.name) {
+    if (showMessage) {
+      showToast("Introduce tu nombre.");
+    }
 
-$$('input[name="payment"]')
-  .forEach(input => {
+    $("#customerName").focus();
 
-    input.addEventListener(
-      "change",
-      updatePayment
-    );
-
-  });
-
-
-/* =========================================================
-   MENÚ MÓVIL
-========================================================= */
-
-menuToggle?.addEventListener(
-  "click",
-  () => {
-
-    mainNav?.classList.toggle(
-      "open"
-    );
-
+    return false;
   }
-);
 
+  if (!customer.phone) {
+    if (showMessage) {
+      showToast("Introduce tu teléfono de contacto.");
+    }
 
-$$(".main-nav a").forEach(
-  link => {
+    $("#customerPhone").focus();
 
-    link.addEventListener(
-      "click",
-      () => {
+    return false;
+  }
 
-        mainNav?.classList.remove(
-          "open"
-        );
+  if (!customer.date) {
+    if (showMessage) {
+      showToast("Selecciona la fecha del pedido.");
+    }
 
+    return false;
+  }
+
+  if (selectedDelivery === "home") {
+
+    if (!customer.address) {
+      if (showMessage) {
+        showToast("Introduce la dirección de entrega.");
       }
-    );
 
+      $("#customerAddress").focus();
+
+      return false;
+    }
+
+    if (!customer.city) {
+      if (showMessage) {
+        showToast("Introduce la localidad.");
+      }
+
+      $("#customerCity").focus();
+
+      return false;
+    }
   }
-);
 
+  if (!$("#acceptTerms").checked) {
+    if (showMessage) {
+      showToast("Confirma que revisarás los datos del pedido.");
+    }
+
+    return false;
+  }
+
+  return true;
+}
+
+function buildOrder() {
+
+  const customer = getCustomerData();
+
+  return {
+    id: `EMP-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+
+    customer,
+
+    delivery: selectedDelivery,
+
+    deliveryText:
+      selectedDelivery === "pickup"
+        ? "Recogida en estación Renfe de Azuqueca de Henares"
+        : "Entrega a domicilio",
+
+    items: cart.map(item => ({
+      ...item
+    })),
+
+    subtotal: getCartSubtotal(),
+    shipping: getShipping(),
+    total: getCartTotal(),
+
+    payment: "Pendiente"
+  };
+}
 
 /* =========================================================
-   ANIMACIONES DE ENTRADA
+   CONFIRMACIÓN
 ========================================================= */
 
-function initReveal() {
+function updateConfirmation() {
 
-  const elements =
-    $$(".reveal");
+  const preview = $("#confirmationPreview");
 
-  if (
-    !("IntersectionObserver" in window)
-  ) {
+  if (!preview) return;
 
-    elements.forEach(
-      element =>
-        element.classList.add(
-          "visible"
-        )
-    );
+  if (cart.length === 0) {
+    preview.innerHTML = `
+      <p>
+        Completa tus datos y el carrito para ver
+        aquí el resumen del pedido.
+      </p>
+    `;
 
     return;
   }
 
-  const observer =
-    new IntersectionObserver(
-      entries => {
+  const customer = getCustomerData();
 
-        entries.forEach(
-          entry => {
+  const products = cart.map(item => {
+    const units =
+      item.type === "pack"
+        ? `${item.quantity} × ${item.units}`
+        : item.quantity;
 
-            if (
-              entry.isIntersecting
-            ) {
+    return `${item.name} (${units})`;
+  }).join(", ");
 
-              entry.target.classList.add(
-                "visible"
-              );
+  preview.innerHTML = `
+    <div class="confirmation-list">
 
-              observer.unobserve(
-                entry.target
-              );
+      <div>
+        <span>👤 Nombre</span>
+        <strong>${escapeHTML(customer.name || "...")}</strong>
+      </div>
 
-            }
+      <div>
+        <span>🥟 Pedido</span>
+        <strong>${escapeHTML(products)}</strong>
+      </div>
 
+      <div>
+        <span>💶 Total</span>
+        <strong>${money(getCartTotal())}</strong>
+      </div>
+
+      <div>
+        <span>📦 Entrega</span>
+        <strong>
+          ${
+            selectedDelivery === "pickup"
+              ? "🚉 Renfe Azuqueca · GRATIS"
+              : "🚚 A domicilio"
           }
+        </strong>
+      </div>
+
+      <div>
+        <span>📅 Fecha</span>
+        <strong>${escapeHTML(customer.date || "...")}</strong>
+      </div>
+
+      <div>
+        <span>📱 Teléfono</span>
+        <strong>${escapeHTML(customer.phone || "...")}</strong>
+      </div>
+
+    </div>
+  `;
+}
+
+[
+  "#customerName",
+  "#customerPhone",
+  "#orderDate",
+  "#orderTime",
+  "#customerAddress",
+  "#customerCity",
+  "#customerZip",
+  "#customerMessage"
+].forEach(selector => {
+
+  const element = $(selector);
+
+  if (element) {
+    element.addEventListener("input", updateConfirmation);
+    element.addEventListener("change", updateConfirmation);
+  }
+
+});
+
+/* =========================================================
+   WHATSAPP
+========================================================= */
+
+function buildWhatsAppMessage(order, payment = "Pendiente") {
+
+  const items = order.items.map(item => {
+
+    if (item.type === "pack") {
+      return `🥟 ${item.name}: ${item.quantity} pack(s) × ${item.units} unidades = ${money(item.price * item.quantity)}`;
+    }
+
+    return `🥟 Empanada de pollo: ${item.quantity} unidad(es) × 1,50 € = ${money(item.price * item.quantity)}`;
+
+  }).join("\n");
+
+  const delivery =
+    order.delivery === "pickup"
+      ? `🚉 Recogida en Estación Renfe de Azuqueca de Henares\n💚 Sin gasto de envío`
+      : `🚚 A domicilio\n📍 ${order.customer.address}, ${order.customer.zip} ${order.customer.city}\n📦 Gastos de envío: ${money(order.shipping)}`;
+
+  return `🥟 *NUEVO PEDIDO DE EMPANADAS*
+
+👤 *Nombre:* ${order.customer.name}
+
+📱 *Teléfono:* ${order.customer.phone}
+
+${items}
+
+💶 *Subtotal:* ${money(order.subtotal)}
+
+${delivery}
+
+📅 *Fecha:* ${order.customer.date}
+
+🕐 *Hora:* ${order.customer.time || "A confirmar"}
+
+💶 *TOTAL:* ${money(order.total)}
+
+💳 *Pago:* ${payment}
+
+📝 *Mensaje:* ${order.customer.message || "Sin observaciones"}
+
+🆔 *Pedido:* ${order.id}
+
+¡Hola! Me gustaría confirmar la disponibilidad de mi pedido.`;
+}
+
+function sendWhatsApp(order = null, payment = "Pendiente") {
+
+  if (!order) {
+
+    if (!validateOrder(true)) {
+      return;
+    }
+
+    order = buildOrder();
+  }
+
+  const message = buildWhatsAppMessage(
+    order,
+    payment
+  );
+
+  const url =
+    `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`;
+
+  window.open(url, "_blank", "noopener");
+
+  saveOrder(order);
+}
+
+$("#sendWhatsApp").addEventListener(
+  "click",
+  () => sendWhatsApp()
+);
+
+/* =========================================================
+   GUARDADO DE PEDIDOS
+========================================================= */
+
+function getOrders() {
+
+  try {
+
+    const saved =
+      localStorage.getItem("empanadas_orders");
+
+    const orders =
+      saved ? JSON.parse(saved) : [];
+
+    return Array.isArray(orders)
+      ? orders
+      : [];
+
+  } catch {
+
+    return [];
+
+  }
+}
+
+function saveOrder(order) {
+
+  const orders = getOrders();
+
+  const exists = orders.some(
+    item => item.id === order.id
+  );
+
+  if (!exists) {
+    orders.unshift(order);
+  }
+
+  localStorage.setItem(
+    "empanadas_orders",
+    JSON.stringify(orders)
+  );
+
+  currentOrder = order;
+
+  renderAdmin();
+}
+
+/* =========================================================
+   PAYPAL DINÁMICO
+========================================================= */
+
+/*
+  El SDK utiliza el importe real del carrito.
+  El botón HostedButtons que PayPal entrega para un importe
+  fijo no permite cambiar dinámicamente el precio del carrito,
+  por lo que aquí se utiliza PayPal Buttons dinámico con el
+  mismo Client ID proporcionado.
+*/
+
+function renderPayPal() {
+
+  if (paypalRendered) return;
+
+  if (
+    typeof paypal === "undefined" ||
+    !paypal.Buttons
+  ) {
+    setTimeout(renderPayPal, 800);
+    return;
+  }
+
+  paypal.Buttons({
+
+    style: {
+      layout: "vertical",
+      shape: "rect",
+      color: "gold",
+      label: "paypal",
+      height: 48
+    },
+
+    onClick: function(data, actions) {
+
+      if (!validateOrder(true)) {
+        return actions.reject();
+      }
+
+      currentOrder = buildOrder();
+
+      return actions.resolve();
+    },
+
+    createOrder: function(data, actions) {
+
+      const total =
+        getCartTotal().toFixed(2);
+
+      currentOrder = buildOrder();
+
+      return actions.order.create({
+        purchase_units: [
+          {
+            description:
+              "Pedido de empanadas de pollo",
+
+            custom_id:
+              currentOrder.id,
+
+            amount: {
+              currency_code: "EUR",
+              value: total
+            }
+          }
+        ]
+      });
+
+    },
+
+    onApprove: async function(data, actions) {
+
+      try {
+
+        const details =
+          await actions.order.capture();
+
+        if (!currentOrder) {
+          currentOrder = buildOrder();
+        }
+
+        currentOrder.payment =
+          "PayPal confirmado";
+
+        currentOrder.paypalOrderId =
+          details.id;
+
+        saveOrder(currentOrder);
+
+        showToast(
+          "Pago confirmado. Abriendo WhatsApp..."
         );
 
-      },
-      {
-        threshold: .12,
-        rootMargin:
-          "0px 0px -40px 0px"
+        setTimeout(() => {
+
+          sendWhatsApp(
+            currentOrder,
+            "PayPal confirmado"
+          );
+
+        }, 700);
+
+      } catch (error) {
+
+        console.error(error);
+
+        showToast(
+          "No se pudo confirmar el pago."
+        );
+
       }
+
+    },
+
+    onCancel: function() {
+
+      showToast(
+        "Pago cancelado. Tu carrito sigue disponible."
+      );
+
+    },
+
+    onError: function(error) {
+
+      console.error(error);
+
+      showToast(
+        "PayPal no está disponible en este momento."
+      );
+
+    }
+
+  })
+  .render("#paypal-button-container")
+  .then(() => {
+
+    paypalRendered = true;
+
+  })
+  .catch(error => {
+
+    console.error(
+      "Error cargando PayPal:",
+      error
     );
 
-  elements.forEach(
-    element =>
-      observer.observe(element)
-  );
+  });
 
 }
 
-initReveal();
-
+renderPayPal();
 
 /* =========================================================
-   LOADER
+   CONTINUAR AL PAGO
 ========================================================= */
 
-window.addEventListener(
-  "load",
+$("#continuePayment").addEventListener(
+  "click",
   () => {
 
-    setTimeout(
-      () => {
+    if (!validateOrder(true)) {
+      return;
+    }
 
-        loader?.classList.add(
-          "loaded"
-        );
+    currentOrder = buildOrder();
 
-      },
-      650
+    document
+      .querySelector("#pago")
+      .scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+    showToast(
+      "Pedido preparado. Selecciona PayPal o metálico."
     );
 
   }
 );
 
-
 /* =========================================================
-   VALIDAR DIRECCIÓN
+   PAGO EN METÁLICO
 ========================================================= */
 
-function validateAddress() {
+$("#cashPayment").addEventListener(
+  "click",
+  () => {
 
-  if (
-    getDelivery() !== "home"
-  ) {
+    if (!validateOrder(true)) {
+      return;
+    }
 
-    return true;
+    const order = buildOrder();
 
-  }
+    order.payment =
+      "Metálico al recibir / recoger";
 
-  const address =
-    $("#address")?.value.trim();
+    saveOrder(order);
 
-  const city =
-    $("#city")?.value.trim();
-
-  const postal =
-    $("#postal")?.value.trim();
-
-  if (
-    !address ||
-    !city ||
-    !postal
-  ) {
-
-    notify(
-      "Completa todos los datos de entrega."
+    showToast(
+      "Pedido preparado. Abriendo WhatsApp..."
     );
 
-    $("#address")?.focus();
+    setTimeout(() => {
 
-    return false;
+      sendWhatsApp(
+        order,
+        "Metálico al recibir / recoger"
+      );
+
+    }, 500);
 
   }
-
-  return true;
-
-}
-
+);
 
 /* =========================================================
-   TEXTO DE ENTREGA
+   BUSCADOR GOOGLE
 ========================================================= */
 
-function buildDeliveryText(order) {
+function googleSearch(query) {
 
-  if (
-    getDelivery() === "pickup"
-  ) {
+  const clean = query.trim();
 
-    return (
-      `📦 *Entrega:* Punto de recogida\n` +
-      `🚉 *Lugar:* ${CONFIG.pickup.location}\n` +
-      `💶 *Gasto de envío:* 0,00 €`
-    );
-
+  if (!clean) {
+    showToast("Escribe algo para buscar.");
+    return;
   }
 
-  const address =
-    $("#address")?.value.trim() || "";
-
-  const city =
-    $("#city")?.value.trim() || "";
-
-  const postal =
-    $("#postal")?.value.trim() || "";
-
-  let text =
-    `📦 *Entrega:* A domicilio\n` +
-    `📍 *Dirección:* ${address}\n` +
-    `🏙️ *Localidad:* ${city}\n` +
-    `📮 *Código postal:* ${postal}\n`;
-
-  if (
-    order.shipping === null
-  ) {
-
-    text +=
-      `💶 *Gasto de envío:* Por confirmar`;
-
-  } else {
-
-    text +=
-      `💶 *Gasto de envío:* ${money(order.shipping)}`;
-
-  }
-
-  return text;
-
-}
-
-
-/* =========================================================
-   CONSTRUIR PEDIDO WHATSAPP
-========================================================= */
-
-function buildWhatsAppMessage() {
-
-  const name =
-    $("#name")?.value.trim() || "";
-
-  const phone =
-    $("#phone")?.value.trim() || "";
-
-  const date =
-    $("#orderDate")?.value || "";
-
-  const time =
-    $("#orderTime")?.value || "";
-
-  const message =
-    $("#message")?.value.trim()
-    || "Sin observaciones";
-
-  const payment =
-    getPayment();
-
-  const order =
-    calculateOrder();
-
-  const paymentText =
-    payment === "paypal"
-      ? "PayPal · Pago online"
-      : "Metálico";
-
-  const totalText =
-    order.total === null
-      ? `${money(order.subtotal)} + envío`
-      : money(order.total);
-
-  return (
-    `🥟 *NUEVO PEDIDO DE EMPANADAS*\n\n` +
-
-    `👤 *Nombre:* ${name}\n` +
-
-    `📞 *Teléfono:* ${phone}\n` +
-
-    `🥟 *Producto:* ${CONFIG.product.name}\n` +
-
-    `🥟 *Cantidad:* ${quantity}\n` +
-
-    `💶 *Precio unidad:* ${money(CONFIG.product.price)}\n` +
-
-    `💶 *Subtotal:* ${money(order.subtotal)}\n` +
-
-    `💶 *Total:* ${totalText}\n\n` +
-
-    `${buildDeliveryText(order)}\n\n` +
-
-    `📅 *Fecha:* ${date}\n` +
-
-    `⏰ *Hora:* ${time}\n` +
-
-    `💳 *Método de pago:* ${paymentText}\n` +
-
-    `📝 *Mensaje:* ${message}\n\n` +
-
-    `¡Hola! Me gustaría confirmar la disponibilidad de mi pedido.`
+  window.open(
+    `https://www.google.com/search?q=${encodeURIComponent(clean)}`,
+    "_blank",
+    "noopener"
   );
-
 }
 
-
-/* =========================================================
-   ENVIAR PEDIDO A WHATSAPP
-========================================================= */
-
-orderForm?.addEventListener(
+$("#googleSearch").addEventListener(
   "submit",
   event => {
 
     event.preventDefault();
 
-    if (
-      !orderForm.checkValidity()
-    ) {
-
-      orderForm.reportValidity();
-
-      notify(
-        "Completa los campos obligatorios."
-      );
-
-      return;
-
-    }
-
-    if (
-      !validateAddress()
-    ) {
-
-      return;
-
-    }
-
-    const message =
-      buildWhatsAppMessage();
-
-    const whatsappUrl =
-      `https://wa.me/${CONFIG.whatsapp}` +
-      `?text=${encodeURIComponent(message)}`;
-
-    notify(
-      "Abriendo WhatsApp con tu pedido..."
-    );
-
-    setTimeout(
-      () => {
-
-        window.open(
-          whatsappUrl,
-          "_blank",
-          "noopener,noreferrer"
-        );
-
-      },
-      450
+    googleSearch(
+      $("#googleQuery").value
     );
 
   }
 );
 
+$("#modalGoogleSearch").addEventListener(
+  "submit",
+  event => {
 
-/* =========================================================
-   EFECTO INTERACTIVO DEL RATÓN
-========================================================= */
+    event.preventDefault();
 
-if (
-  window.matchMedia(
-    "(pointer:fine)"
-  ).matches &&
-  !window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches
-) {
-
-  const heroArt =
-    document.querySelector(
-      ".hero-art"
+    googleSearch(
+      $("#modalGoogleQuery").value
     );
 
-  document.addEventListener(
-    "pointermove",
-    event => {
+  }
+);
 
-      if (!heroArt) return;
-
-      const x =
-        (event.clientX /
-          window.innerWidth -
-          .5) * 8;
-
-      const y =
-        (event.clientY /
-          window.innerHeight -
-          .5) * 8;
-
-      heroArt.style.transform =
-        `translate(${x}px, ${y}px)`;
-
-    }
-  );
-
-}
-
+$("#openSearch").addEventListener(
+  "click",
+  () => {
+    $("#searchModal").classList.add("open");
+    setTimeout(
+      () => $("#modalGoogleQuery").focus(),
+      150
+    );
+  }
+);
 
 /* =========================================================
-   ESCAPE
+   MODALES
+========================================================= */
+
+$$("[data-close]").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    const id = button.dataset.close;
+
+    $(`#${id}`).classList.remove("open");
+
+  });
+
+});
+
+$$(".modal").forEach(modal => {
+
+  modal.addEventListener("click", event => {
+
+    if (event.target === modal) {
+      modal.classList.remove("open");
+    }
+
+  });
+
+});
+
+/* =========================================================
+   PANEL ADMINISTRACIÓN
+========================================================= */
+
+$("#adminButton").addEventListener(
+  "click",
+  () => {
+
+    $("#adminModal").classList.add("open");
+
+    $("#adminLogin").hidden = false;
+    $("#adminContent").hidden = true;
+
+    $("#adminPassword").value = "";
+
+  }
+);
+
+$("#adminLoginBtn").addEventListener(
+  "click",
+  () => {
+
+    const password =
+      $("#adminPassword").value;
+
+    if (password !== CONFIG.adminPassword) {
+
+      showToast(
+        "Contraseña incorrecta."
+      );
+
+      return;
+    }
+
+    $("#adminLogin").hidden = true;
+    $("#adminContent").hidden = false;
+
+    renderAdmin();
+
+  }
+);
+
+$("#adminPassword").addEventListener(
+  "keydown",
+  event => {
+
+    if (event.key === "Enter") {
+      $("#adminLoginBtn").click();
+    }
+
+  }
+);
+
+function renderAdmin() {
+
+  const orders = getOrders();
+
+  const sales =
+    orders.reduce(
+      (sum, order) =>
+        sum + Number(order.total || 0),
+      0
+    );
+
+  $("#adminOrdersCount").textContent =
+    orders.length;
+
+  $("#adminVisits").textContent =
+    getVisits();
+
+  $("#adminSales").textContent =
+    money(sales);
+
+  const list = $("#adminOrdersList");
+
+  if (!orders.length) {
+
+    list.innerHTML = `
+      <div class="empty-cart">
+        <span>📦</span>
+        <p>No hay pedidos registrados.</p>
+      </div>
+    `;
+
+    return;
+  }
+
+  list.innerHTML = orders.map(order => {
+
+    const date =
+      new Date(order.createdAt)
+        .toLocaleString("es-ES");
+
+    return `
+      <div class="admin-order">
+
+        <strong>
+          ${escapeHTML(order.id)}
+        </strong>
+
+        <small>
+          👤 ${escapeHTML(order.customer.name)}
+        </small>
+
+        <small>
+          📱 ${escapeHTML(order.customer.phone)}
+        </small>
+
+        <small>
+          📦 ${escapeHTML(order.deliveryText)}
+        </small>
+
+        <small>
+          💶 ${money(order.total)}
+        </small>
+
+        <small>
+          💳 ${escapeHTML(order.payment)}
+        </small>
+
+        <small>
+          🕐 ${escapeHTML(date)}
+        </small>
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+$("#exportOrders").addEventListener(
+  "click",
+  () => {
+
+    const orders = getOrders();
+
+    if (!orders.length) {
+      showToast("No hay pedidos para exportar.");
+      return;
+    }
+
+    const blob = new Blob(
+      [JSON.stringify(orders, null, 2)],
+      { type: "application/json" }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+    link.download =
+      `pedidos-empanadas-${new Date().toISOString().slice(0,10)}.json`;
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    showToast(
+      "Pedidos exportados correctamente."
+    );
+
+  }
+);
+
+$("#clearOrders").addEventListener(
+  "click",
+  () => {
+
+    const confirmed =
+      window.confirm(
+        "¿Borrar todos los pedidos guardados en este navegador?"
+      );
+
+    if (!confirmed) return;
+
+    localStorage.removeItem(
+      "empanadas_orders"
+    );
+
+    renderAdmin();
+
+    showToast(
+      "Pedidos eliminados."
+    );
+
+  }
+);
+
+/* =========================================================
+   NAVEGACIÓN
+========================================================= */
+
+$$('a[href^="#"]').forEach(link => {
+
+  link.addEventListener("click", () => {
+
+    const target =
+      link.getAttribute("href");
+
+    if (
+      target &&
+      target !== "#" &&
+      document.querySelector(target)
+    ) {
+
+      setTimeout(() => {
+        closeCart();
+      }, 50);
+
+    }
+
+  });
+
+});
+
+/* =========================================================
+   TECLADO
 ========================================================= */
 
 document.addEventListener(
   "keydown",
   event => {
 
-    if (
-      event.key === "Escape"
-    ) {
+    if (event.key === "Escape") {
 
-      mainNav?.classList.remove(
-        "open"
-      );
+      closeCart();
+
+      $$(".modal.open").forEach(modal => {
+        modal.classList.remove("open");
+      });
 
     }
 
   }
 );
 
-
 /* =========================================================
-   INICIALIZACIÓN
+   CARGA INICIAL
 ========================================================= */
 
-setQuantity(1);
+loadCart();
+updateConfirmation();
+renderAdmin();
 
-updateDelivery();
+/* =========================================================
+   EFECTO DE ENTRADA
+========================================================= */
 
-updatePayment();
+window.addEventListener(
+  "load",
+  () => {
+
+    document.body.classList.add(
+      "page-loaded"
+    );
+
+  }
+);

@@ -1,0 +1,631 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050208">
+  <title>Empanadas de Pollo | Pedidos</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="loader" class="loader">
+    <div class="loader-ring"></div>
+    <p>Cargando experiencia...</p>
+  </div>
+
+  <div class="background-glow glow-1"></div>
+  <div class="background-glow glow-2"></div>
+  <div class="grid-background"></div>
+
+  <header class="header">
+    <a href="#inicio" class="logo">
+      <span class="logo-icon">🥟</span>
+      <span>
+        <strong>EMPANADAS</strong>
+        <small>DE POLLO</small>
+      </span>
+    </a>
+
+    <button class="menu-button" id="menuButton" aria-label="Abrir menú">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav id="nav">
+      <a href="#inicio">Inicio</a>
+      <a href="#pedido">Pedido</a>
+      <a href="#entrega">Entrega</a>
+      <a href="#pago">Pago</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- HERO -->
+    <section class="hero section" id="inicio">
+
+      <div class="hero-content reveal">
+
+        <div class="eyebrow">
+          <span></span>
+          SABOR · CALIDAD · EXPERIENCIA
+          <span></span>
+        </div>
+
+        <h1>
+          Empanadas<br>
+          <em>con sabor.</em>
+        </h1>
+
+        <p>
+          Empanadas de pollo preparadas para compartir.
+          Haz tu pedido de forma rápida, segura y profesional.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="#pedido" class="button primary">
+            Hacer mi pedido <span>→</span>
+          </a>
+
+          <a href="#entrega" class="button secondary">
+            Ver entregas
+          </a>
+        </div>
+
+        <div class="clock">
+
+          <div>
+            <small>HORA ACTUAL</small>
+            <strong id="time">00:00:00</strong>
+          </div>
+
+          <div class="clock-line"></div>
+
+          <div>
+            <small>FECHA</small>
+            <strong id="date">00/00/0000</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="hero-visual reveal delay">
+
+        <div class="neon-circle circle-1"></div>
+        <div class="neon-circle circle-2"></div>
+
+        <div class="food-card">
+
+          <div class="food-light"></div>
+
+          <div class="food-image">🥟</div>
+
+          <span>ESPECIALIDAD</span>
+
+          <h2>EMPANADA<br>DE POLLO</h2>
+
+          <small>
+            CASERA · CRUJIENTE · DELICIOSA
+          </small>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- CARACTERÍSTICAS -->
+    <section class="section">
+
+      <div class="section-title reveal">
+        <span>01 / EXPERIENCIA</span>
+
+        <h2>
+          Tu pedido,<br>
+          <em>tu momento.</em>
+        </h2>
+
+        <p>
+          Todo preparado para que realizar tu pedido sea
+          rápido, sencillo y profesional.
+        </p>
+      </div>
+
+      <div class="features">
+
+        <article class="feature reveal">
+          <div>🥟</div>
+          <h3>Empanadas de pollo</h3>
+          <p>
+            Producto preparado con atención y pensado
+            para disfrutar en cualquier momento.
+          </p>
+        </article>
+
+        <article class="feature reveal delay">
+          <div>🚆</div>
+          <h3>Recogida gratuita</h3>
+          <p>
+            Recoge tu pedido en la estación de Renfe
+            de Azuqueca de Henares sin ningún coste.
+          </p>
+        </article>
+
+        <article class="feature reveal delay-2">
+          <div>💳</div>
+          <h3>Pago online</h3>
+          <p>
+            Puedes realizar el pago utilizando
+            el sistema integrado de PayPal.
+          </p>
+        </article>
+
+      </div>
+
+    </section>
+
+
+    <!-- PEDIDO -->
+    <section class="section" id="pedido">
+
+      <div class="section-title reveal">
+
+        <span>02 / TU PEDIDO</span>
+
+        <h2>
+          Haz tu<br>
+          <em>pedido.</em>
+        </h2>
+
+        <p>
+          Completa los datos y prepara automáticamente
+          tu pedido para enviarlo por WhatsApp.
+        </p>
+
+      </div>
+
+      <div class="order-layout">
+
+        <form class="order-form glass reveal" id="orderForm">
+
+          <div class="form-grid">
+
+            <label>
+              <span>Nombre completo *</span>
+              <input
+                id="name"
+                type="text"
+                placeholder="Ej. Nathaly"
+                required
+              >
+            </label>
+
+            <label>
+              <span>Teléfono *</span>
+              <input
+                id="phone"
+                type="tel"
+                placeholder="Ej. 602 487 576"
+                required
+              >
+            </label>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            <label>
+              <span>Cantidad *</span>
+
+              <div class="quantity">
+
+                <button type="button" id="minus">−</button>
+
+                <input
+                  id="quantity"
+                  type="number"
+                  value="6"
+                  min="1"
+                  max="100"
+                  required
+                >
+
+                <button type="button" id="plus">+</button>
+
+              </div>
+
+            </label>
+
+
+            <label>
+              <span>Forma de entrega *</span>
+
+              <select id="delivery">
+
+                <option value="recogida">
+                  Recogida gratuita — Renfe Azuqueca
+                </option>
+
+                <option value="domicilio">
+                  Entrega a domicilio
+                </option>
+
+              </select>
+
+            </label>
+
+          </div>
+
+
+          <div id="addressContainer" class="hidden">
+
+            <label>
+              <span>Dirección de entrega *</span>
+
+              <input
+                id="address"
+                type="text"
+                placeholder="Calle, número, piso, puerta..."
+              >
+            </label>
+
+          </div>
+
+
+          <div id="pickupContainer" class="pickup">
+
+            <span>📍</span>
+
+            <div>
+              <strong>Recogida gratuita</strong>
+
+              <p>
+                Estación de Renfe de Azuqueca de Henares
+              </p>
+            </div>
+
+          </div>
+
+
+          <label>
+
+            <span>Mensaje para tu pedido</span>
+
+            <textarea
+              id="message"
+              placeholder="Ej. Que venga con mucha ensalada y mayonesa y ajo por favor."
+            ></textarea>
+
+          </label>
+
+
+          <div class="total">
+
+            <span>Total</span>
+
+            <strong>
+              <span id="total">6</span> €
+            </strong>
+
+          </div>
+
+
+          <button class="button primary submit" type="submit">
+
+            Enviar pedido por WhatsApp
+
+            <span>↗</span>
+
+          </button>
+
+          <small class="form-help">
+            Se abrirá WhatsApp con el pedido completo listo para enviar.
+          </small>
+
+        </form>
+
+
+        <aside class="summary glass reveal delay">
+
+          <span class="summary-title">
+            RESUMEN DEL PEDIDO
+          </span>
+
+          <div class="summary-product">
+
+            <span>🥟</span>
+
+            <div>
+              <strong>Empanada de pollo</strong>
+              <small>1 € por unidad</small>
+            </div>
+
+          </div>
+
+          <div class="summary-line">
+            <span>Unidades</span>
+            <strong id="summaryQuantity">6</strong>
+          </div>
+
+          <div class="summary-line">
+            <span>Entrega</span>
+            <strong id="summaryDelivery">
+              Recogida
+            </strong>
+          </div>
+
+          <div class="summary-total">
+
+            <span>Total</span>
+
+            <strong>
+              <span id="summaryTotal">6</span> €
+            </strong>
+
+          </div>
+
+          <div class="secure">
+            ✦ PEDIDO ORGANIZADO
+          </div>
+
+        </aside>
+
+      </div>
+
+    </section>
+
+
+    <!-- ENTREGA -->
+    <section class="section" id="entrega">
+
+      <div class="section-title reveal">
+
+        <span>03 / ENTREGA</span>
+
+        <h2>
+          Elige cómo<br>
+          <em>recibirlo.</em>
+        </h2>
+
+      </div>
+
+
+      <div class="delivery-grid">
+
+        <article class="delivery-card reveal">
+
+          <span class="delivery-number">01</span>
+
+          <div class="delivery-icon">🏠</div>
+
+          <h3>A domicilio</h3>
+
+          <p>
+            Introduce tu dirección y teléfono de contacto
+            para coordinar la entrega.
+          </p>
+
+          <span class="tag">
+            DIRECCIÓN + TELÉFONO
+          </span>
+
+        </article>
+
+
+        <article class="delivery-card featured reveal delay">
+
+          <span class="delivery-number">02</span>
+
+          <div class="delivery-icon">🚆</div>
+
+          <h3>Recogida gratuita</h3>
+
+          <p>
+            Punto de recogida:
+            <strong>
+              estación de Renfe de Azuqueca de Henares
+            </strong>.
+          </p>
+
+          <span class="tag">
+            SIN CARGO
+          </span>
+
+        </article>
+
+      </div>
+
+    </section>
+
+
+    <!-- PAYPAL -->
+    <section class="section" id="pago">
+
+      <div class="section-title reveal">
+
+        <span>04 / PAGO</span>
+
+        <h2>
+          Pago<br>
+          <em>con PayPal.</em>
+        </h2>
+
+        <p>
+          Utiliza el botón de PayPal para completar
+          el pago del producto configurado.
+        </p>
+
+      </div>
+
+
+      <div class="payment glass reveal">
+
+        <div class="payment-description">
+
+          <div class="payment-icon">◈</div>
+
+          <div>
+
+            <h3>Pago seguro</h3>
+
+            <p>
+              Realiza tu pago online mediante
+              PayPal.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div
+          id="paypal-container-8P5SWTNAJR9W4"
+          class="paypal"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- REDES -->
+    <section class="section contact" id="contacto">
+
+      <div class="contact-box reveal">
+
+        <span>05 / CONECTA</span>
+
+        <h2>
+          Estamos<br>
+          <em>online.</em>
+        </h2>
+
+        <p>
+          Encuentra novedades, publicaciones
+          y contenido en nuestras redes.
+        </p>
+
+
+        <div class="socials">
+
+          <a
+            href="https://www.youtube.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ▶ YouTube
+          </a>
+
+          <a
+            href="https://www.tiktok.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ♪ TikTok
+          </a>
+
+          <a
+            href="https://www.facebook.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            f Facebook
+          </a>
+
+          <a
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ◎ Instagram
+          </a>
+
+        </div>
+
+
+        <form id="googleForm" class="google">
+
+          <input
+            id="googleInput"
+            type="search"
+            placeholder="Buscar en Google..."
+          >
+
+          <button type="submit">
+            ⌕
+          </button>
+
+        </form>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <footer>
+
+    <strong>🥟 EMPANADAS DE POLLO</strong>
+
+    <p>
+      Una experiencia hecha para compartir.
+    </p>
+
+    <small>
+      © <span id="year"></span> Todos los derechos reservados.
+    </small>
+
+  </footer>
+
+
+  <button
+    id="topButton"
+    class="top-button"
+    aria-label="Volver arriba"
+  >
+    ↑
+  </button>
+
+
+  <div id="toast" class="toast"></div>
+
+
+  <script src="script.js"></script>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAE-_0bpY5bp5POKN2LqiDTn-tTh6E7JiCQ_pAPSeU4hOum0sHF1sMJzQ0APl7YKnxk-QTxE_2VN90Dy4&components=hosted-buttons&disable-funding=venmo&currency=EUR"></script>
+
+  <script>
+    window.addEventListener("load", function () {
+
+      if (
+        window.paypal &&
+        document.querySelector("#paypal-container-8P5SWTNAJR9W4")
+      ) {
+
+        paypal.HostedButtons({
+          hostedButtonId: "8P5SWTNAJR9W4"
+        }).render(
+          "#paypal-container-8P5SWTNAJR9W4"
+        );
+
+      }
+
+    });
+  </script>
+
+</body>
+</html>
